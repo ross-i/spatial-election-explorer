@@ -1,5 +1,24 @@
 # Spatial Election Explore (SEE)
 
+## Environment Management
+
+1. Setup conda environment:
+`conda env create -f environment.yml`
+`conda activate spatial-election-explorer`
+
+2. Install requirements: 
+`pip install -r requirements.txt`
+`npm install`
+
+3. Add dependency to the environment:
+`pip freeze > requirements.txt`
+
+## Test API
+
+1. Run API:
+`uvicorn main:app --reload`
+2. Open url: http://127.0.0.1:8000/docs (default local address may vary)
+
 # Planned
 
 ## API Endpoint 1: /election
