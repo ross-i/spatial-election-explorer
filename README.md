@@ -35,7 +35,6 @@
     RunId: unique runid for caching
     voting_method: from a list of supported voting methods 
     num_winners: n
-    param* to be defined
 
 ### Output Class:
 
@@ -54,3 +53,16 @@
 ## API Endpoint 2: /generate/synthetic
 
 ## API Endpoint 3: /generate/survey
+
+## Supported Election Methods:
+Single-Winner Options
+1. Plurality
+2. Borda
+3. IRV
+
+Multi-Winner Options
+1. Plurality (SNTV)
+2. Bloc Plurality
+3. Borda
+4. STV
+
