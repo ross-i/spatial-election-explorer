@@ -1,5 +1,13 @@
-# local test files
 .local
-
-# environment
 .env
+
+.DS_Store
+
+# npm/vite output
+/node_modules/
+/dist/
+.vite/
+
+# python bytecode
+*.pyc
+__pycache__

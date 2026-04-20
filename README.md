@@ -1,68 +1,111 @@
-# Spatial Election Explore (SEE)
+# Spatial Election Explorer (SEE)
 
-## Environment Management
+An interactive tool for simulating ranked-choice elections on the Euclidean plane.
 
-1. Setup conda environment:
-`conda env create -f environment.yml`
-`conda activate spatial-election-explorer`
+## Stack
+- Front-end: Svelte + D3 (node.JS)
+- Server: Vite
+- Algorithm Execution: Python running in the browser via [Pyodide](https://pyodide.org).
 
-2. Install requirements: 
-`pip install -r requirements.txt`
-`npm install`
+## Setup
 
-3. Add dependency to the environment:
-`pip freeze > requirements.txt`
+```bash
+npm install
+npm run dev
+```
 
-## Test API
+## API
 
-1. Run API:
-`uvicorn main:app --reload`
-2. Open url: http://127.0.0.1:8000/docs (default local address may vary)
+### `run_election(layers, method, num_winners)`
 
-# Planned
+Imported from `./src/bridge.js`. Sends a job to the Pyodide web worker and returns a Promise that resolves with the election result once Python has finished. The worker loads automatically — you don't need to wait for it yourself.
 
-## API Endpoint 1: /election
+```js
+import { run_election } from "./bridge.js";
 
-### Input Class: 
+const result = await run_election(layers, "plurality", 1);
+console.log(result);
+```
 
-1. InputPoint: 
-    id: unique id for point 
-    type: voter/candidate
-    num: number of voters (weight for simulation)
-    coordinate: (x,y)
-2. InputJSON:
-    points:[InputPoint]
-    RunId: unique runid for caching
-    voting_method: from a list of supported voting methods 
-    num_winners: n
+#### Parameters
 
-### Output Class:
+| Parameter | Type | Description |
+|---|---|---|
+| `layers` | `LayerBundle` | Input data (see below) |
+| `method` | `string` | Election method (e.g. `"plurality"`) |
+| `num_winners` | `number` | Number of seats to fill |
 
-1. OutputPoint: (only output candidate)
-    id: unique id for point 
-    type: voter/candidate
-    coordinate: (x,y)
-    score: candidate's score in the election
-    winner: 
-    social_cost: sum of distance between this candidate to all voters
+Supported values of `method`: `"plurality"`, `"borda"`, `"IRV"`, `"blocPlurality"`, `"STV"`.
 
-2. OutputJSON: 
-    points: [OutputPoint]
-    runid: same as input for caching purpose.
+#### Returns
 
-## API Endpoint 2: /generate/synthetic
+`Promise<ElectionResult>` — an array of output layers, each with annotated points indicating winners and scores.
 
-## API Endpoint 3: /generate/survey
+---
 
-## Supported Election Methods:
-Single-Winner Options
-1. Plurality
-2. Borda
-3. IRV
+### Data types
 
-Multi-Winner Options
-1. Plurality (SNTV)
-2. Bloc Plurality
-3. Borda
-4. STV
+#### `LayerBundle` — input
 
+An array of `PointsLayer` objects:
+
+```js
+const layers = [
+  {
+    name: "Layer A",
+    type: "candidate",
+    points: [
+      { id: "a1", weight: 1, x: 0.2, y: 0.4 },
+      { id: "a2", weight: 1, x: 0.5, y: 0.7 },
+      { id: "a3", weight: 1, x: 0.9, y: 0.1 },
+    ],
+  },
+  {
+    name: "Layer B",
+    type: "voter",
+    points: [
+      { id: "b1", weight: 2, x: 0.3, y: 0.3 },
+      { id: "b2", weight: 1, x: 0.6, y: 0.6 },
+      { id: "b3", weight: 1, x: 0.1, y: 0.9 },
+      { id: "b4", weight: 1, x: 0.8, y: 0.2 },
+    ],
+  },
+];
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `name` | `string` | Name for the layer |
+| `type` | `string` | `"candidate"` or `"voter"` |
+| `points[].id` | `string` | Unique point identifier |
+| `points[].weight` | `number` | Number of voters at this point |
+| `points[].x` | `number` | X coordinate |
+| `points[].y` | `number` | Y coordinate |
+
+#### `ElectionResult` — output
+
+An array of `OutLayer` objects; only includes candidate layers.
+
+```js
+[
+  {
+    name: "Layer1",
+    type: "candidate",
+    points: [
+      { id: "a1", winner: true,  score: 1.0, x: 0.2, y: 0.4 },
+      { id: "a2", winner: false, score: 1.0, x: 0.5, y: 0.7 },
+      { id: "a3", winner: false, score: 1.0, x: 0.9, y: 0.1 },
+    ],
+  },
+]
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `name` | `string` | Name for the layer |
+| `type` | `string` | Layer type (always `"candidate"`) |
+| `points[].id` | `string` | Unique point identifier |
+| `points[].winner` | `boolean` | Whether this candidate won a seat |
+| `points[].score` | `number` | Score assigned by the election method |
+| `points[].x` | `number` | X coordinate |
+| `points[].y` | `number` | Y coordinate |
