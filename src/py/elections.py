@@ -7,6 +7,9 @@ def run_election(layers, method, num_winners):
     print(num_winners)
 
     # TODO: everything :)
+    # Contract: any extra fields present on a layer dict or point dict in the input must be
+    # copied through to the corresponding output dict unchanged. The frontend may attach
+    # arbitrary metadata (e.g. display names, colors) and expects to find it on the output.
 
     return [
         {

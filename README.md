@@ -82,6 +82,8 @@ const layers = [
 | `points[].x` | `number` | X coordinate |
 | `points[].y` | `number` | Y coordinate |
 
+Any additional fields included on a layer object or a point object beyond those listed above will be passed through unchanged by the Python layer and will appear in the corresponding output layer/point.
+
 #### `ElectionResult` — output
 
 An array of `OutLayer` objects; only includes candidate layers.
@@ -109,3 +111,5 @@ An array of `OutLayer` objects; only includes candidate layers.
 | `points[].score` | `number` | Score assigned by the election method |
 | `points[].x` | `number` | X coordinate |
 | `points[].y` | `number` | Y coordinate |
+
+Any extra metadata fields present on the input layers or points are preserved in the output — the Python code carries them through without inspecting or modifying them.

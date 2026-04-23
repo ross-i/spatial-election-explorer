@@ -31,12 +31,16 @@ worker.onmessage = (e) => {
   }
 };
 
-/** @typedef {{ id: string, weight: number, x: number, y: number }} Point */
-/** @typedef {{ name: string, type: string, points: Point[]}} PointsLayer */
+// The `[key: string]: any` in each typedef means: any extra fields beyond the listed ones
+// are also allowed, and will be passed through to the output unchanged. The Python layer
+// treats unknown fields as opaque and does not strip them.
+
+/** @typedef {{ id: string, weight: number, x: number, y: number, [key: string]: any }} Point */
+/** @typedef {{ name: string, type: string, points: Point[], [key: string]: any }} PointsLayer */
 /** @typedef {PointsLayer[]} LayerBundle */
 
-/** @typedef {{ id: string, winner: boolean, score: number, x: number, y: number }} OutPoint */
-/** @typedef {{ name: string, type: string, points: OutPoint[] }} OutLayer */
+/** @typedef {{ id: string, winner: boolean, score: number, x: number, y: number, [key: string]: any }} OutPoint */
+/** @typedef {{ name: string, type: string, points: OutPoint[], [key: string]: any }} OutLayer */
 /** @typedef {OutLayer[]} ElectionResult */
 
 /**
