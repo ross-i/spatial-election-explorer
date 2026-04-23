@@ -39,7 +39,7 @@ worker.onmessage = (e) => {
 /** @typedef {{ name: string, type: string, points: Point[], [key: string]: any }} PointsLayer */
 /** @typedef {PointsLayer[]} LayerBundle */
 
-/** @typedef {{ id: string, winner: boolean, score: number, x: number, y: number, [key: string]: any }} OutPoint */
+/** @typedef {{ id: string, winner: boolean, score: number | null, x: number, y: number, [key: string]: any }} OutPoint */
 /** @typedef {{ name: string, type: string, points: OutPoint[], [key: string]: any }} OutLayer */
 /** @typedef {OutLayer[]} ElectionResult */
 
