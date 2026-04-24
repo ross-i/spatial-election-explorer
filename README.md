@@ -108,7 +108,7 @@ An array of `OutLayer` objects; only includes candidate layers.
 | `type` | `string` | Layer type (always `"candidate"`) |
 | `points[].id` | `string` | Unique point identifier |
 | `points[].winner` | `boolean` | Whether this candidate won a seat |
-| `points[].score` | `number` | Score assigned by the election method |
+| `points[].score` | `number \| null` | Score assigned by the election method, or `null` if the method does not produce a meaningful score (e.g. STV) |
 | `points[].x` | `number` | X coordinate |
 | `points[].y` | `number` | Y coordinate |
 
