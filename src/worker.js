@@ -4,12 +4,15 @@ let pyodide;
 
 async function init() {
   pyodide = await loadPyodide();
-  const modules = import.meta.glob("./py/*.py", { query: "?raw", eager: true });
+  const modules = import.meta.glob("./py/**/*.py", { query: "?raw", eager: true });
 
   await pyodide.loadPackage("numpy");
+  await pyodide.loadPackage("scipy");
   for (const [path, module] of Object.entries(modules)) {
-    const filename = path.split("/").pop();
-    pyodide.FS.writeFile(`/home/pyodide/${filename}`, module.default);
+    const relPath = path.replace(/^\.\/py\//, "");  // e.g. "methods/__init__.py"
+    const fullPath = `/home/pyodide/${relPath}`;
+    pyodide.FS.mkdirTree(fullPath.substring(0, fullPath.lastIndexOf("/")));
+    pyodide.FS.writeFile(fullPath, module.default);
   }
 
   self.postMessage({ type: "ready" });
