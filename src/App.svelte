@@ -103,7 +103,12 @@
     const hasCandidates = bundle.some(l => l.type === 'candidate');
     const hasVoters = bundle.some(l => l.type === 'voter');
     if (!hasCandidates || !hasVoters) { alert('Need both voter and candidate layers to run an election.'); return; }
-    store.electionResult = await run_election(bundle, store.method, Number(store.numWinners));
+    store.isGenerating = true;
+    try {
+      store.electionResult = await run_election(bundle, store.method, Number(store.numWinners));
+    } finally {
+      store.isGenerating = false;
+    }
   }
 
   function clearAll() {
