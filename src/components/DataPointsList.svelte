@@ -64,7 +64,8 @@
         <option value={m}>{m}</option>
       {/each}
     </select>
-    <input type="number" class="winners-input" min="1" bind:value={store.numWinners} title="# winners">
+    <input type="number" class="winners-input" min="1" bind:value={store.numWinners} title="# winners"
+      oninput={() => { store.electionResult = null; }}>
     <button class="btn-generate" onclick={onGenerate} disabled={store.isGenerating}>
       {#if store.isGenerating}
         <span class="spinner"></span>running
