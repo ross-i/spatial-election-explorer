@@ -7,7 +7,7 @@
 
   const { onGenerate, onDelete, onToggleVisibility, onStartEdit } = $props();
 
-  const METHODS = ['plurality', 'borda', 'IRV', 'blocPlurality', 'STV'];
+  const METHODS = ['plurality', 'borda', 'IRV', 'bloc_plurality', 'STV'];
 </script>
 
 <div class="data-panel">

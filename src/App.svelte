@@ -1,8 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { store } from './store.svelte.js';
-  import { run_election } from './mock.js';
-  // import { run_election } from './bridge.js';  // swap for real Pyodide backend
+  import { run_election } from './bridge.js';
   import { gaussian, uniformRect, uniformDisc, survey } from './lib/pointGen.js';
   import { makeLayer, toLayerBundle, formatLabel } from './lib/layerUtils.js';
   import PlotCanvas from './components/PlotCanvas.svelte';
