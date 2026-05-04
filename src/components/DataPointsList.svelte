@@ -107,7 +107,7 @@
   .toggle-label { display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 12px; color: #2D2B27; }
   .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
   .voter-dot { background: #3F6E6A; }
-  .cand-dot { background: #C8983A; border: 1px solid #8E6A22; }
+  .cand-dot { background: #C0392B; border: 1px solid #922B21; }
   .layer-list { flex: 1; overflow-y: auto; padding: 2px 0; background: #EDE8DF; }
   .layer-row {
     display: flex;
