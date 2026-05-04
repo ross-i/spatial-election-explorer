@@ -1,0 +1,37 @@
+import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.mjs";
+
+let pyodide;
+
+async function init() {
+  pyodide = await loadPyodide();
+  const modules = import.meta.glob("./py/**/*.py", { query: "?raw", eager: true });
+
+  await pyodide.loadPackage("numpy");
+  await pyodide.loadPackage("scipy");
+  for (const [path, module] of Object.entries(modules)) {
+    const relPath = path.replace(/^\.\/py\//, "");  // e.g. "methods/__init__.py"
+    const fullPath = `/home/pyodide/${relPath}`;
+    pyodide.FS.mkdirTree(fullPath.substring(0, fullPath.lastIndexOf("/")));
+    pyodide.FS.writeFile(fullPath, module.default);
+  }
+
+  self.postMessage({ type: "ready" });
+}
+
+self.onmessage = async (e) => {
+  const { type, id, payload } = e.data;
+  if (type === "run_election") {
+    const { layers, method, num_winners } = payload;
+    pyodide.globals.set("layers", layers);
+    pyodide.globals.set("method", method);
+    pyodide.globals.set("num_winners", num_winners);
+    const result = await pyodide.runPythonAsync(`
+      import json, elections
+      json.dumps(elections.run_election(layers, method, num_winners))
+    `);
+    self.postMessage({ type: "result", id, result: JSON.parse(result) });
+  }
+};
+
+init();
+
