@@ -18,6 +18,7 @@ class AppStore {
 
   layers = $state([]);
   electionResult = $state(null);
+  isGenerating = $state(false);
   addMode = $state(null);
   selectingCenter = $state(false);
   showVoters = $state(true);

@@ -58,13 +58,20 @@
   </div>
 
   <div class="generate-row">
-    <select bind:value={store.method} class="method-select">
+    <select bind:value={store.method} class="method-select"
+      onchange={() => { store.electionResult = null; }}>
       {#each METHODS as m}
         <option value={m}>{m}</option>
       {/each}
     </select>
     <input type="number" class="winners-input" min="1" bind:value={store.numWinners} title="# winners">
-    <button class="btn-generate" onclick={onGenerate}>generate</button>
+    <button class="btn-generate" onclick={onGenerate} disabled={store.isGenerating}>
+      {#if store.isGenerating}
+        <span class="spinner"></span>running
+      {:else}
+        generate
+      {/if}
+    </button>
   </div>
 </div>
 
@@ -98,8 +105,8 @@
   }
   .toggle-label { display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 12px; color: #2D2B27; }
   .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-  .voter-dot { background: #f472b6; }
-  .cand-dot { background: #fbbf24; border: 1px solid #d97706; }
+  .voter-dot { background: #3F6E6A; }
+  .cand-dot { background: #C8983A; border: 1px solid #8E6A22; }
   .layer-list { flex: 1; overflow-y: auto; padding: 2px 0; background: #EDE8DF; }
   .layer-row {
     display: flex;
@@ -167,6 +174,20 @@
     font-size: 12px;
     font-weight: 600;
     transition: background 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
   }
-  .btn-generate:hover { background: #A84F32; }
+  .btn-generate:hover:not(:disabled) { background: #A84F32; }
+  .btn-generate:disabled { background: #A88472; cursor: not-allowed; display: flex; align-items: center; gap: 5px; }
+  .spinner {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>

@@ -66,16 +66,16 @@
       for (const layer of layers.filter(l => l.visible && l.type === 'voter')) {
         const lit = highlightedLayerId && layer.id === highlightedLayerId;
         const r = lit ? 6 : 4;
-        const opacity = 0.75;
+        const opacity = 0.85;
         g.selectAll(null)
           .data(layer.points)
           .join('circle')
           .attr('cx', d => xScale(d.x))
           .attr('cy', d => yScale(d.y))
           .attr('r', r)
-          .attr('fill', '#f472b6')
+          .attr('fill', '#3F6E6A')
           .attr('opacity', opacity)
-          .attr('stroke', lit ? '#c0186a' : 'none')
+          .attr('stroke', lit ? '#2F5D58' : 'none')
           .attr('stroke-width', lit ? 1.5 : 0)
           .style('cursor', 'default')
           .on('mouseover', function() { d3.select(this).attr('r', r + 2).attr('opacity', 1); })
@@ -202,16 +202,16 @@
         const resultPts = electionResult.flatMap(l => l.points);
         resultPts.forEach(p => {
           const cx = xScale(p.x), cy = yScale(p.y);
-          const fill = p.winner ? '#b8860b' : '#ffd700';
-          const sz = p.winner ? 10 : 7;
+          const fill = '#C8983A';
+          const sz = p.winner ? 14 : 10;
           g.append('path')
             .attr('d', starPath(cx, cy, sz))
             .attr('fill', fill)
-            .attr('stroke', p.winner ? '#7a5800' : '#cc9900')
-            .attr('stroke-width', 1);
+            .attr('stroke', '#8E6A22')
+            .attr('stroke-width', 0.5);
           if (p.winner) {
             g.append('text')
-              .attr('x', cx).attr('y', cy - 14)
+              .attr('x', cx).attr('y', cy - 18)
               .attr('text-anchor', 'middle')
               .attr('font-size', '11px')
               .attr('font-family', "Georgia, 'Times New Roman', serif")
@@ -225,10 +225,10 @@
           const lit = highlightedLayerId && layer.id === highlightedLayerId;
           layer.points.forEach(p => {
             g.append('path')
-              .attr('d', starPath(xScale(p.x), yScale(p.y), lit ? 10 : 7))
-              .attr('fill', '#ffd700')
-              .attr('stroke', lit ? '#a07000' : '#cc9900')
-              .attr('stroke-width', lit ? 2 : 1)
+              .attr('d', starPath(xScale(p.x), yScale(p.y), lit ? 14 : 10))
+              .attr('fill', '#C8983A')
+              .attr('stroke', lit ? '#B07F1F' : '#8E6A22')
+              .attr('stroke-width', lit ? 1 : 0.5)
               .attr('opacity', 1);
           });
         }
