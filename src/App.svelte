@@ -7,6 +7,8 @@
   import PlotCanvas from './components/PlotCanvas.svelte';
   import ConfigPanel from './components/ConfigPanel.svelte';
   import DataPointsList from './components/DataPointsList.svelte';
+  import TutorialPanel from './components/TutorialPanel.svelte';
+  import { TUTORIALS } from './lib/tutorials.js';
 
   onMount(() => {
     function beforeUnload(e) {
@@ -190,9 +192,21 @@
     store.centerY = parseFloat(y.toFixed(3));
   }
 
-  let interactive = $derived(store.addMode !== null || store.selectingCenter);
+  let interactive = $derived(!store.tutorialMode && (store.addMode !== null || store.selectingCenter));
 
-  let centerPreview = $derived(store.activeTab === 'synthetic' && store.distribution !== null ? {
+  let tutorialStep = $derived(
+    TUTORIALS[store.activeTutorialIdx]?.steps[store.activeTutorialStep] ?? null
+  );
+
+  let activeLayers = $derived(
+    store.tutorialMode ? (tutorialStep?.layers ?? []) : store.layers
+  );
+
+  let activeElectionResult = $derived(
+    store.tutorialMode ? (tutorialStep?.electionResult ?? null) : store.electionResult
+  );
+
+  let centerPreview = $derived(!store.tutorialMode && store.activeTab === 'synthetic' && store.distribution !== null ? {
     x: Number(store.centerX),
     y: Number(store.centerY),
     distribution: store.distribution,
@@ -219,6 +233,14 @@
         +candidate
       </button>
     </div>
+    <div class="toolbar-center">
+      <button
+        class="toolbar-btn tutorial-btn"
+        class:active={store.tutorialMode}
+        onclick={() => { store.tutorialMode = !store.tutorialMode; }}>
+        {store.tutorialMode ? '✕ exit tutorial' : '? tutorial'}
+      </button>
+    </div>
     <div class="toolbar-right">
       <button class="toolbar-btn" onclick={clearAll}>clear</button>
       <button class="toolbar-btn" onclick={exportData}>export</button>
@@ -228,8 +250,8 @@
   <div class="main">
     <div class="plot-area">
       <PlotCanvas
-        layers={store.layers}
-        electionResult={store.electionResult}
+        layers={activeLayers}
+        electionResult={activeElectionResult}
         showVoters={store.showVoters}
         showCandidates={store.showCandidates}
         {interactive}
@@ -240,19 +262,25 @@
       />
     </div>
 
-    <div class="right-panel">
-      <div class="config-area">
-        <ConfigPanel onAddData={addData} onSelectCenter={startSelectCenter} />
+    {#if store.tutorialMode}
+      <div class="right-panel">
+        <TutorialPanel onExit={() => { store.tutorialMode = false; }} />
       </div>
-      <div class="data-area">
-        <DataPointsList
-          onGenerate={generateElection}
-          onDelete={deleteLayer}
-          onToggleVisibility={toggleLayerVisibility}
-          onStartEdit={startEditLayer}
-        />
+    {:else}
+      <div class="right-panel">
+        <div class="config-area">
+          <ConfigPanel onAddData={addData} onSelectCenter={startSelectCenter} />
+        </div>
+        <div class="data-area">
+          <DataPointsList
+            onGenerate={generateElection}
+            onDelete={deleteLayer}
+            onToggleVisibility={toggleLayerVisibility}
+            onStartEdit={startEditLayer}
+          />
+        </div>
       </div>
-    </div>
+    {/if}
   </div>
 </div>
 
@@ -263,6 +291,7 @@
   .app { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
 
   .toolbar {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -274,6 +303,8 @@
   }
 
   .toolbar-left, .toolbar-right { display: flex; gap: 6px; }
+  .toolbar-center { position: absolute; left: 50%; transform: translateX(-50%); }
+  .tutorial-btn { font-style: italic; letter-spacing: 0.03em; }
 
   .toolbar-btn {
     padding: 4px 12px;

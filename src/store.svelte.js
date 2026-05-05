@@ -27,6 +27,9 @@ class AppStore {
   numWinners = $state(1);
   editingLayerId = $state(null);
   highlightedLayerId = $state(null);
+  tutorialMode = $state(false);
+  activeTutorialIdx = $state(0);
+  activeTutorialStep = $state(0);
 }
 
 export const store = new AppStore();
