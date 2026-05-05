@@ -202,12 +202,12 @@
         const resultPts = electionResult.flatMap(l => l.points);
         resultPts.forEach(p => {
           const cx = xScale(p.x), cy = yScale(p.y);
-          const fill = '#C0392B';
+          const fill = '#C8983A';
           const sz = p.winner ? 14 : 10;
           g.append('path')
             .attr('d', starPath(cx, cy, sz))
             .attr('fill', fill)
-            .attr('stroke', '#922B21')
+            .attr('stroke', '#8E6A22')
             .attr('stroke-width', 0.5);
           if (p.winner) {
             g.append('text')
@@ -226,8 +226,8 @@
           layer.points.forEach(p => {
             g.append('path')
               .attr('d', starPath(xScale(p.x), yScale(p.y), lit ? 14 : 10))
-              .attr('fill', '#C0392B')
-              .attr('stroke', lit ? '#7B241C' : '#922B21')
+              .attr('fill', '#C8983A')
+              .attr('stroke', lit ? '#B07F1F' : '#8E6A22')
               .attr('stroke-width', lit ? 1 : 0.5)
               .attr('opacity', 1);
           });
