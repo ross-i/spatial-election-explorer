@@ -215,11 +215,34 @@
     rectHeight: Number(store.rectHeight),
     discRadius: Number(store.discRadius),
   } : null);
+
+  let panelWidth = $state(380);
+  let dragStartX = 0;
+  let dragStartWidth = 0;
+
+  function onResizeStart(e) {
+    dragStartX = e.clientX;
+    dragStartWidth = panelWidth;
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+
+    function onMouseMove(e) {
+      panelWidth = Math.min(700, Math.max(260, dragStartWidth + (dragStartX - e.clientX)));
+    }
+    function onMouseUp() {
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    }
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }
 </script>
 
 <div class="app">
   <div class="toolbar">
-    <div class="toolbar-left">
+    <div class="toolbar-left" style:visibility={store.tutorialMode ? 'hidden' : 'visible'}>
       <button
         class="toolbar-btn"
         class:active={store.addMode === 'voter'}
@@ -241,7 +264,7 @@
         {store.tutorialMode ? '✕ exit tutorial' : '? tutorial'}
       </button>
     </div>
-    <div class="toolbar-right">
+    <div class="toolbar-right" style:visibility={store.tutorialMode ? 'hidden' : 'visible'}>
       <button class="toolbar-btn" onclick={clearAll}>clear</button>
       <button class="toolbar-btn" onclick={exportData}>export</button>
     </div>
@@ -262,12 +285,14 @@
       />
     </div>
 
+    <div class="resize-handle" onmousedown={onResizeStart}></div>
+
     {#if store.tutorialMode}
-      <div class="right-panel">
+      <div class="right-panel" style:width="{panelWidth}px">
         <TutorialPanel onExit={() => { store.tutorialMode = false; }} />
       </div>
     {:else}
-      <div class="right-panel">
+      <div class="right-panel" style:width="{panelWidth}px">
         <div class="config-area">
           <ConfigPanel onAddData={addData} onSelectCenter={startSelectCenter} />
         </div>
@@ -324,8 +349,16 @@
 
   .plot-area { flex: 1; overflow: hidden; border: 1px solid #D5CFC6; border-right: none; background: #F5F0E8; }
 
+  .resize-handle {
+    width: 5px;
+    flex-shrink: 0;
+    cursor: col-resize;
+    background: #D5CFC6;
+    transition: background 0.15s;
+  }
+  .resize-handle:hover { background: #C96442; }
+
   .right-panel {
-    width: 380px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
