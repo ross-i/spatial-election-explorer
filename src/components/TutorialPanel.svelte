@@ -58,7 +58,6 @@
           {/if}
         </button>
       {/each}
-      <button class="exit-btn" onclick={onExit}>← back to explorer</button>
     </div>
   {/if}
 
@@ -207,21 +206,6 @@
     border-radius: 8px;
     flex-shrink: 0;
   }
-
-  .exit-btn {
-    margin-top: auto;
-    padding: 8px 12px;
-    background: none;
-    border: none;
-    border-top: 1px solid #D5CFC6;
-    cursor: pointer;
-    font-size: 11px;
-    color: #9C9690;
-    text-align: left;
-    transition: color 0.1s;
-    width: 100%;
-  }
-  .exit-btn:hover { color: #C96442; }
 
   /* ── Sidebar toggle ── */
   .sidebar-toggle {
