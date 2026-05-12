@@ -4,7 +4,7 @@
   import SurveyTab from './tabs/SurveyTab.svelte';
   import CustomTab from './tabs/CustomTab.svelte';
 
-  const { onAddData, onSelectCenter } = $props();
+  const { onAddData, onSelectCenter, onSwitchTab } = $props();
 </script>
 
 <div class="config-panel">
@@ -13,7 +13,7 @@
       <button
         class="tab-btn"
         class:active={store.activeTab === tab}
-        onclick={() => { store.activeTab = tab; store.editingLayerId = null; }}>
+        onclick={() => onSwitchTab(tab)}>
         {tab.charAt(0).toUpperCase() + tab.slice(1)}
       </button>
     {/each}
@@ -36,7 +36,13 @@
       onclick={() => { store.editingLayerId = null; store.distribution = null; }}>
       cancel
     </button>
-    <button class="btn-add" onclick={onAddData}>{store.editingLayerId ? 'update' : 'add data'}</button>
+    <button
+      class="btn-add"
+      onclick={onAddData}
+      disabled={store.activeTab === 'survey' && !store.editingLayerId && store.layers.some(l => l.params?.kind === 'survey')}
+    >
+      {store.editingLayerId ? 'update' : store.activeTab === 'survey' ? 'add survey respondent data' : 'add data'}
+    </button>
   </div>
 </div>
 
@@ -90,7 +96,8 @@
     font-weight: 600;
     transition: background 0.1s;
   }
-  .btn-add:hover { background: #A84F32; }
+  .btn-add:hover:not(:disabled) { background: #A84F32; }
+  .btn-add:disabled { opacity: 0.35; cursor: not-allowed; }
   .btn-cancel {
     padding: 5px 14px;
     border: 1px solid #2D2B27;

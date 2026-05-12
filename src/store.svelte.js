@@ -10,6 +10,14 @@ class AppStore {
   pointType = $state('voter');
   count = $state(20);
 
+  // Survey tab state
+  surveyXAxis = $state(null);   // index id for x axis
+  surveyYAxis = $state(null); // index id for y axis
+  // rankings: { indexId: [col, col, ...] } — order = importance (first = most important)
+  surveyRankings = $state(null); // null = use defaults from surveyIndexes.js
+  surveyData = $state(null);     // loaded respondent array from survey_data.json
+
+  // legacy (kept for now, unused)
   selectedIdeologies = $state([]);
   surveyCount = $state(20);
   indicateParty = $state(false);

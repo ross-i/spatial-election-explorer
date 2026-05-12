@@ -5,7 +5,7 @@
   import eyeOffIcon from '../assets/eye-off.svg';
   import trashIcon from '../assets/trash.svg';
 
-  const { onGenerate, onDelete, onToggleVisibility, onStartEdit } = $props();
+  const { onGenerate, onDelete, onToggleVisibility, onStartEdit, onGenerateRandom, onOpenProfiler, onEditCandidate } = $props();
 
   const METHODS = ['plurality', 'borda', 'IRV', 'bloc_plurality', 'STV'];
 </script>
@@ -13,18 +13,15 @@
 <div class="data-panel">
   <div class="panel-header">
     <span class="panel-title">Data Points</span>
-    <label class="toggle-label">
-      <input type="checkbox" bind:checked={store.showVoters}>
-      <span class="dot voter-dot"></span> Voters
-    </label>
-    <label class="toggle-label">
-      <input type="checkbox" bind:checked={store.showCandidates}>
-      <span class="dot cand-dot"></span> Candidates
-    </label>
+    {#if store.activeTab === 'survey'}
+      {@const axesReady = store.surveyXAxis && store.surveyYAxis && store.surveyXAxis !== store.surveyYAxis}
+      <button class="cand-btn primary" onclick={onGenerateRandom} disabled={!axesReady} title={axesReady ? '' : 'Select both axes first'}>Random Candidate</button>
+      <button class="cand-btn primary" onclick={onOpenProfiler} disabled={!axesReady} title={axesReady ? '' : 'Select both axes first'}>Profile Candidate</button>
+    {/if}
   </div>
 
   <div class="layer-list">
-    {#each store.layers.filter(l => l.type === 'voter' ? store.showVoters : store.showCandidates) as layer (layer.id)}
+    {#each store.layers as layer (layer.id)}
       <div
         class="layer-row"
         class:hidden={!layer.visible}
@@ -32,8 +29,13 @@
         onclick={() => { store.highlightedLayerId = store.highlightedLayerId === layer.id ? null : layer.id; }}
         style="cursor: pointer;"
       >
+        <span class="color-swatch" style:background={layer.color ?? (layer.type === 'candidate' ? '#C8983A' : '#3F6E6A')}></span>
         <span class="layer-label" class:editing={store.editingLayerId === layer.id} title={layer.label}>{layer.label}</span>
-        {#if layer.params}
+        {#if layer.params?.kind === 'survey_candidate'}
+          <button class="icon-btn" onclick={() => onEditCandidate?.(layer.id)} title="re-answer questions">
+            <img src={pencilIcon} alt="edit">
+          </button>
+        {:else if layer.params}
           <button
             class="icon-btn cancel-btn"
             style:display={store.editingLayerId === layer.id ? 'flex' : 'none'}
@@ -104,10 +106,16 @@
     text-transform: uppercase;
     color: #6B6560;
   }
-  .toggle-label { display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 12px; color: #2D2B27; }
-  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-  .voter-dot { background: #3F6E6A; }
-  .cand-dot { background: #C8983A; border: 1px solid #8E6A22; }
+  .color-swatch { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .cand-btn {
+    padding: 2px 7px; border-radius: 3px; border: 1px solid #C0BAB2;
+    background: #FAF7F2; color: #2D2B27; cursor: pointer; font-size: 10px; font-weight: 500;
+    white-space: nowrap;
+  }
+  .cand-btn:hover { background: #EDE8DF; }
+  .cand-btn.primary { background: #C96442; color: #fff; border-color: #C96442; }
+  .cand-btn.primary:hover:not(:disabled) { background: #A84F32; }
+  .cand-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .layer-list { flex: 1; overflow-y: auto; padding: 2px 0; background: #EDE8DF; }
   .layer-row {
     display: flex;
