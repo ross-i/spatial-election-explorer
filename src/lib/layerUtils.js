@@ -1,10 +1,26 @@
-export function makeLayer(type, pts, labelStr, params = null) {
+export const LAYER_COLORS = [
+  '#4B7BE5', // blue
+  '#E5754B', // orange
+  '#4DAF64', // green
+  '#C94B9E', // pink
+  '#8B4BE5', // purple
+  '#C9A43A', // amber
+  '#4BB5C9', // cyan
+  '#E54B4B', // red
+];
+
+export function layerColor(index) {
+  return LAYER_COLORS[index % LAYER_COLORS.length];
+}
+
+export function makeLayer(type, pts, labelStr, params = null, color = null) {
   return {
     id: crypto.randomUUID(),
     label: labelStr,
     type,
     points: pts,
     visible: true,
+    color,
     params
   };
 }

@@ -1,21 +1,32 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { store } from './store.svelte.js';
   import { run_election } from './bridge.js';
-  import { gaussian, uniformRect, uniformDisc, survey } from './lib/pointGen.js';
-  import { makeLayer, toLayerBundle, formatLabel } from './lib/layerUtils.js';
+  import { gaussian, uniformRect, uniformDisc, surveyFromData } from './lib/pointGen.js';
+  import { INDEXES, defaultRankings, rankingsToWeights, scoreRespondent } from './lib/surveyIndexes.js';
+  import { makeLayer, toLayerBundle, formatLabel, layerColor } from './lib/layerUtils.js';
   import PlotCanvas from './components/PlotCanvas.svelte';
   import ConfigPanel from './components/ConfigPanel.svelte';
   import DataPointsList from './components/DataPointsList.svelte';
   import TutorialPanel from './components/TutorialPanel.svelte';
   import { TUTORIALS } from './lib/tutorials.js';
+  import CandidateProfiler from './components/CandidateProfiler.svelte';
+
+  const ALL_QUESTIONS = INDEXES.flatMap(idx =>
+    idx.questions.map(q => ({ ...q, indexLabel: idx.label }))
+  );
+
+  let selectedPoint = $state(null);
+  let profilingOpen = $state(false);
+  let editingCandidateId = $state(null);
+  let pendingTab = $state(null);
+
+  function handlePointClick(data) { selectedPoint = data; }
+  function closePopup() { selectedPoint = null; }
 
   onMount(() => {
     function beforeUnload(e) {
-      if (store.layers.length > 0) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
+      if (store.layers.length > 0) { e.preventDefault(); e.returnValue = ''; }
     }
     window.addEventListener('beforeunload', beforeUnload);
     return () => window.removeEventListener('beforeunload', beforeUnload);
@@ -27,29 +38,13 @@
 
     if (tab === 'synthetic') {
       if (!store.distribution) { alert('Please select a distribution first.'); return; }
-
       const cx = Number(store.centerX), cy = Number(store.centerY);
       const n = Number(store.count);
       const type = store.pointType;
-
-      if (!Number.isFinite(n) || n < 1 || !Number.isInteger(n)) {
-        alert('Count must be a positive integer.');
-        return;
-      }
-      if (store.distribution === 'gaussian' && (Number(store.stdDev) < 0 || !Number.isFinite(Number(store.stdDev)))) {
-        alert('Standard deviation must be ≥ 0.');
-        return;
-      }
-      if (store.distribution === 'uniform_disc' && (Number(store.discRadius) < 0 || !Number.isFinite(Number(store.discRadius)))) {
-        alert('Radius must be ≥ 0.');
-        return;
-      }
-      if (store.distribution === 'uniform_rectangle' &&
-          (Number(store.rectWidth) < 0 || Number(store.rectHeight) < 0 ||
-           !Number.isFinite(Number(store.rectWidth)) || !Number.isFinite(Number(store.rectHeight)))) {
-        alert('Width and height must be ≥ 0.');
-        return;
-      }
+      if (!Number.isFinite(n) || n < 1 || !Number.isInteger(n)) { alert('Count must be a positive integer.'); return; }
+      if (store.distribution === 'gaussian' && (Number(store.stdDev) < 0 || !Number.isFinite(Number(store.stdDev)))) { alert('Standard deviation must be ≥ 0.'); return; }
+      if (store.distribution === 'uniform_disc' && (Number(store.discRadius) < 0 || !Number.isFinite(Number(store.discRadius)))) { alert('Radius must be ≥ 0.'); return; }
+      if (store.distribution === 'uniform_rectangle' && (Number(store.rectWidth) < 0 || Number(store.rectHeight) < 0 || !Number.isFinite(Number(store.rectWidth)) || !Number.isFinite(Number(store.rectHeight)))) { alert('Width and height must be ≥ 0.'); return; }
 
       if (store.distribution === 'gaussian') {
         pts = gaussian(cx, cy, store.stdDev, n);
@@ -65,24 +60,38 @@
         params = { kind: 'uniform_disc', cx, cy, r: Number(store.discRadius), type, n };
       }
 
+      const color = layerColor(store.layers.length);
       if (store.editingLayerId) {
-        // Replace existing layer with freshly sampled points
         const id = store.editingLayerId;
+        const existing = store.layers.find(l => l.id === id);
         store.layers = store.layers.map(l =>
-          l.id === id ? { ...makeLayer(type, pts, label, params), id } : l
+          l.id === id ? { ...makeLayer(type, pts, label, params, existing?.color ?? color), id } : l
         );
         store.editingLayerId = null;
         store.highlightedLayerId = null;
       } else {
-        store.layers = [...store.layers, makeLayer(type, pts, label, params)];
+        store.layers = [...store.layers, makeLayer(type, pts, label, params, color)];
       }
       store.distribution = null;
 
     } else if (tab === 'survey') {
-      const n = Number(store.surveyCount);
-      pts = survey(store.selectedIdeologies, n);
-      label = formatLabel({ kind: 'survey', n });
-      store.layers = [...store.layers, makeLayer('voter', pts, label)];
+      if (!store.surveyData) { alert('Survey data is still loading — please wait a moment.'); return; }
+      if (!store.surveyXAxis || !store.surveyYAxis) { alert('Please select both X and Y axes first.'); return; }
+      if (store.surveyXAxis === store.surveyYAxis) { alert('X and Y axes must be different indexes.'); return; }
+      const xIndex = INDEXES.find(i => i.id === store.surveyXAxis);
+      const yIndex = INDEXES.find(i => i.id === store.surveyYAxis);
+      const rankings = store.surveyRankings ?? defaultRankings();
+      pts = surveyFromData(store.surveyData, xIndex, yIndex, rankings);
+      if (!pts.length) { alert('No respondents had valid answers for both selected indexes.'); return; }
+      label = `Survey: ${xIndex.label} × ${yIndex.label} (${pts.length} respondents)`;
+      const existing = store.layers.find(l => l.params?.kind === 'survey');
+      if (existing) {
+        store.layers = store.layers.map(l =>
+          l.id === existing.id ? { ...l, points: pts, label } : l
+        );
+      } else {
+        store.layers = [...store.layers, makeLayer('voter', pts, label, { kind: 'survey' }, layerColor(store.layers.length))];
+      }
 
     } else if (tab === 'custom') {
       if (!store.uploadedFile) { alert('Please upload a JSON file first.'); return; }
@@ -90,7 +99,7 @@
       const voters = raw.filter(p => p.type === 'voter').map(({ x, y }) => ({ x, y }));
       const candidates = raw.filter(p => p.type === 'candidate').map(({ x, y }) => ({ x, y }));
       const newLayers = [];
-      if (voters.length) newLayers.push(makeLayer('voter', voters, formatLabel({ kind: 'custom', filename: store.uploadedFile.name })));
+      if (voters.length) newLayers.push(makeLayer('voter', voters, formatLabel({ kind: 'custom', filename: store.uploadedFile.name }), null, layerColor(store.layers.length)));
       if (candidates.length) newLayers.push(makeLayer('candidate', candidates, formatLabel({ kind: 'custom', filename: store.uploadedFile.name })));
       if (!newLayers.length) { alert('No valid points found in JSON.'); return; }
       store.layers = [...store.layers, ...newLayers];
@@ -98,6 +107,71 @@
 
     store.electionResult = null;
   }
+
+  // --- Candidate generation (survey tab) ---
+
+  function candidatePosition(answers) {
+    if (!store.surveyXAxis || !store.surveyYAxis || store.surveyXAxis === store.surveyYAxis) return { x: 0.5, y: 0.5 };
+    const xIndex = INDEXES.find(i => i.id === store.surveyXAxis);
+    const yIndex = INDEXES.find(i => i.id === store.surveyYAxis);
+    const rankings = store.surveyRankings ?? defaultRankings();
+    const x = scoreRespondent(answers, xIndex, rankingsToWeights(rankings[xIndex.id])) ?? 0.5;
+    const y = scoreRespondent(answers, yIndex, rankingsToWeights(rankings[yIndex.id])) ?? 0.5;
+    return { x, y };
+  }
+
+  function addCandidateLayer(answers, name) {
+    const { x, y } = candidatePosition(answers);
+    const pt = { x, y, _profile: { ...answers, _name: name } };
+    store.layers = [...store.layers, makeLayer('candidate', [pt], name, { kind: 'survey_candidate' }, layerColor(store.layers.length))];
+    store.electionResult = null;
+  }
+
+  function generateRandomCandidate() {
+    const answers = {};
+    for (const idx of INDEXES) {
+      for (const q of idx.questions) {
+        const valid = Object.entries(q.coding).filter(([, v]) => v !== null).map(([k]) => k);
+        answers[q.col] = valid[Math.floor(Math.random() * valid.length)];
+      }
+    }
+    const n = store.layers.filter(l => l.type === 'candidate').length + 1;
+    addCandidateLayer(answers, `Random Candidate ${n}`);
+  }
+
+  function finalizeProfile(answers, name) {
+    if (editingCandidateId) {
+      const { x, y } = candidatePosition(answers);
+      const pt = { x, y, _profile: { ...answers, _name: name } };
+      store.layers = store.layers.map(l =>
+        l.id === editingCandidateId ? { ...l, points: [pt], label: name } : l
+      );
+      store.electionResult = null;
+      editingCandidateId = null;
+    } else {
+      addCandidateLayer(answers, name || 'Candidate');
+    }
+    profilingOpen = false;
+  }
+
+  function startEditCandidate(id) {
+    editingCandidateId = id;
+    profilingOpen = true;
+  }
+
+  function liveUpdateCandidate(answers) {
+    if (!editingCandidateId) return;
+    const layer = store.layers.find(l => l.id === editingCandidateId);
+    if (!layer) return;
+    const { x, y } = candidatePosition(answers);
+    const pt = { x, y, _profile: { ...answers, _name: layer.label } };
+    store.layers = store.layers.map(l =>
+      l.id === editingCandidateId ? { ...l, points: [pt] } : l
+    );
+    store.electionResult = null;
+  }
+
+  // --- Existing functionality (preserved) ---
 
   async function generateElection() {
     const bundle = toLayerBundle(store.layers);
@@ -118,6 +192,28 @@
     store.electionResult = null;
     store.addMode = null;
     store.selectingCenter = false;
+    store.surveyXAxis = null;
+    store.surveyYAxis = null;
+  }
+
+  function handleSwitchTab(tab) {
+    if (tab === store.activeTab) return;
+    if (store.layers.length === 0) {
+      store.activeTab = tab;
+      store.editingLayerId = null;
+    } else {
+      pendingTab = tab;
+    }
+  }
+
+  function confirmSwitchTab() {
+    store.layers = [];
+    store.electionResult = null;
+    store.editingLayerId = null;
+    store.surveyXAxis = null;
+    store.surveyYAxis = null;
+    store.activeTab = pendingTab;
+    pendingTab = null;
   }
 
   function exportData() {
@@ -139,10 +235,11 @@
     }
     if (store.addMode) {
       const type = store.addMode;
+      const kind = type === 'candidate' && store.activeTab === 'survey' ? { kind: 'survey_candidate' } : null;
       store.layers = [...store.layers, makeLayer(
-        type,
-        [{ x, y }],
-        `${type.charAt(0).toUpperCase() + type.slice(1)}(${x.toFixed(2)},${y.toFixed(2)})`
+        type, [{ x, y }],
+        `${type.charAt(0).toUpperCase() + type.slice(1)}(${x.toFixed(2)},${y.toFixed(2)})`,
+        kind, layerColor(store.layers.length)
       )];
       store.electionResult = null;
       store.addMode = null;
@@ -176,10 +273,8 @@
     const p = layer.params;
     store.activeTab = 'synthetic';
     store.distribution = p.kind;
-    store.centerX = p.cx;
-    store.centerY = p.cy;
-    store.pointType = p.type;
-    store.count = p.n;
+    store.centerX = p.cx; store.centerY = p.cy;
+    store.pointType = p.type; store.count = p.n;
     if (p.kind === 'gaussian') store.stdDev = p.sigma;
     if (p.kind === 'uniform_rectangle') { store.rectWidth = p.w; store.rectHeight = p.h; }
     if (p.kind === 'uniform_disc') store.discRadius = p.r;
@@ -193,6 +288,34 @@
   }
 
   let interactive = $derived(!store.tutorialMode && (store.addMode !== null || store.selectingCenter));
+
+  $effect(() => {
+    const rankings = store.surveyRankings;
+    const xAxis = store.surveyXAxis;
+    const yAxis = store.surveyYAxis;
+    const data = store.surveyData;
+    if (!data || !xAxis || !yAxis || xAxis === yAxis) return;
+    const existing = untrack(() => store.layers.find(l => l.params?.kind === 'survey'));
+    if (!existing) return;
+    const xIndex = INDEXES.find(i => i.id === xAxis);
+    const yIndex = INDEXES.find(i => i.id === yAxis);
+    const pts = surveyFromData(data, xIndex, yIndex, rankings ?? defaultRankings());
+    if (!pts.length) return;
+    const label = `Survey: ${xIndex.label} × ${yIndex.label} (${pts.length} respondents)`;
+    untrack(() => {
+      store.layers = store.layers.map(l =>
+        l.id === existing.id ? { ...l, points: pts, label } : l
+      );
+      store.electionResult = null;
+    });
+  });
+
+  let axisInfo = $derived(
+    store.activeTab === 'survey' &&
+    store.surveyXAxis && store.surveyYAxis && store.surveyXAxis !== store.surveyYAxis
+      ? { x: INDEXES.find(i => i.id === store.surveyXAxis), y: INDEXES.find(i => i.id === store.surveyYAxis) }
+      : null
+  );
 
   let tutorialStep = $derived(
     TUTORIALS[store.activeTutorialIdx]?.steps[store.activeTutorialStep] ?? null
@@ -238,6 +361,11 @@
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
   }
+
+  function popupTitle(pt) {
+    if (pt._name !== undefined) return pt._name || 'Candidate';
+    return `Respondent #${pt.id}`;
+  }
 </script>
 
 <div class="app">
@@ -246,12 +374,14 @@
       <button
         class="toolbar-btn"
         class:active={store.addMode === 'voter'}
+        disabled={store.activeTab === 'survey'}
         onclick={() => toggleAddMode('voter')}>
         +voter
       </button>
       <button
         class="toolbar-btn"
         class:active={store.addMode === 'candidate'}
+        disabled={store.activeTab === 'survey' && !(store.surveyXAxis && store.surveyYAxis && store.surveyXAxis !== store.surveyYAxis)}
         onclick={() => toggleAddMode('candidate')}>
         +candidate
       </button>
@@ -279,9 +409,11 @@
         showCandidates={store.showCandidates}
         {interactive}
         onPlotClick={handlePlotClick}
+        onPointClick={handlePointClick}
         {centerPreview}
         highlightedLayerId={store.highlightedLayerId}
         onCenterMove={moveCenterTo}
+        {axisInfo}
       />
     </div>
 
@@ -294,7 +426,7 @@
     {:else}
       <div class="right-panel" style:width="{panelWidth}px">
         <div class="config-area">
-          <ConfigPanel onAddData={addData} onSelectCenter={startSelectCenter} />
+          <ConfigPanel onAddData={addData} onSelectCenter={startSelectCenter} onSwitchTab={handleSwitchTab} />
         </div>
         <div class="data-area">
           <DataPointsList
@@ -302,12 +434,76 @@
             onDelete={deleteLayer}
             onToggleVisibility={toggleLayerVisibility}
             onStartEdit={startEditLayer}
+            onGenerateRandom={generateRandomCandidate}
+            onOpenProfiler={() => { editingCandidateId = null; profilingOpen = true; }}
+            onEditCandidate={startEditCandidate}
           />
         </div>
       </div>
     {/if}
   </div>
 </div>
+
+{#if profilingOpen}
+  {@const editLayer = editingCandidateId ? store.layers.find(l => l.id === editingCandidateId) : null}
+  {@const editProfile = editLayer?.points[0]?._profile}
+  {@const { _name, ...editAnswers } = editProfile ?? { _name: undefined }}
+  <CandidateProfiler
+    onFinalize={finalizeProfile}
+    onCancel={() => { profilingOpen = false; editingCandidateId = null; }}
+    initialAnswers={editProfile ? editAnswers : null}
+    initialName={editProfile ? (_name ?? '') : null}
+    onLiveUpdate={editingCandidateId ? liveUpdateCandidate : null}
+  />
+{/if}
+
+{#if pendingTab !== null}
+  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+  <div class="popup-backdrop" onclick={() => pendingTab = null}>
+    <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+    <div class="tab-confirm-modal" onclick={e => e.stopPropagation()}>
+      <div class="tab-confirm-body">
+        <p class="tab-confirm-msg">Data cannot transfer between tabs as the axes may not align. Do you want to reset the data and plot so you can work in the <strong>{pendingTab}</strong> tab?</p>
+      </div>
+      <div class="tab-confirm-btns">
+        <button class="tab-confirm-cancel" onclick={() => pendingTab = null}>No, return to {store.activeTab}</button>
+        <button class="tab-confirm-ok" onclick={confirmSwitchTab}>Yes, erase data</button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+{#if selectedPoint}
+  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+  <div class="popup-backdrop" onclick={closePopup}>
+    <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+    <div class="popup" onclick={e => e.stopPropagation()}>
+      <div class="popup-header">
+        <span class="popup-title">{popupTitle(selectedPoint)}</span>
+        <button class="popup-close" onclick={closePopup}>✕</button>
+      </div>
+      <div class="popup-body">
+        <table class="popup-table">
+          <thead>
+            <tr><th>Index</th><th>Question</th><th>Response</th></tr>
+          </thead>
+          <tbody>
+            {#each ALL_QUESTIONS as q}
+              {@const raw = selectedPoint[q.col]}
+              {@const missing = raw == null || raw === '' || raw === '9'}
+              {@const answer = (!raw || raw === '') ? 'No answer' : (q.valueLabels?.[raw] ?? `Unknown (${raw})`)}
+              <tr class={missing ? 'missing' : ''}>
+                <td class="idx-cell">{q.indexLabel}</td>
+                <td>{q.label}</td>
+                <td class="val-cell">{answer}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style>
   :global(*, *::before, *::after) { box-sizing: border-box; margin: 0; padding: 0; }
@@ -326,27 +522,20 @@
     border-bottom: 1px solid #D5CFC6;
     gap: 8px;
   }
-
   .toolbar-left, .toolbar-right { display: flex; gap: 6px; }
   .toolbar-center { position: absolute; left: 50%; transform: translateX(-50%); }
   .tutorial-btn { font-style: italic; letter-spacing: 0.03em; }
 
   .toolbar-btn {
-    padding: 4px 12px;
-    border: 1px solid #2D2B27;
-    border-radius: 4px;
-    background: transparent;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    color: #2D2B27;
-    transition: background 0.1s, opacity 0.1s;
+    padding: 4px 12px; border: 1px solid #2D2B27; border-radius: 4px;
+    background: transparent; cursor: pointer; font-size: 12px; font-weight: 500;
+    color: #2D2B27; transition: background 0.1s, opacity 0.1s;
   }
-  .toolbar-btn:hover { background: rgba(45,43,39,0.07); }
+  .toolbar-btn:hover:not(:disabled) { background: rgba(45,43,39,0.07); }
+  .toolbar-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .toolbar-btn.active { background: rgba(201,100,66,0.12); border-color: #C96442; color: #C96442; }
 
   .main { display: flex; flex: 1; overflow: hidden; }
-
   .plot-area { flex: 1; overflow: hidden; border: 1px solid #D5CFC6; border-right: none; background: #F5F0E8; }
 
   .resize-handle {
@@ -375,4 +564,55 @@
   }
 
   .data-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+  .tab-confirm-modal {
+    background: #fff; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+    width: min(420px, 92vw); overflow: hidden;
+  }
+  .tab-confirm-body { padding: 20px 20px 12px; }
+  .tab-confirm-msg { font-size: 13px; line-height: 1.5; color: #2D2B27; }
+  .tab-confirm-btns {
+    display: flex; justify-content: flex-end; gap: 8px;
+    padding: 12px 16px; border-top: 1px solid #e5e7eb;
+  }
+  .tab-confirm-cancel {
+    padding: 6px 14px; border: 1px solid #C0BAB2; border-radius: 4px;
+    background: #FAF7F2; color: #2D2B27; cursor: pointer; font-size: 12px; font-weight: 500;
+  }
+  .tab-confirm-cancel:hover { background: #EDE8DF; }
+  .tab-confirm-ok {
+    padding: 6px 14px; border: none; border-radius: 4px;
+    background: #C96442; color: #fff; cursor: pointer; font-size: 12px; font-weight: 600;
+  }
+  .tab-confirm-ok:hover { background: #A84F32; }
+
+  .popup-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+    display: flex; align-items: center; justify-content: center; z-index: 100;
+  }
+  .popup {
+    background: #fff; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+    width: min(560px, 92vw); max-height: 80vh; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .popup-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
+  }
+  .popup-title { font-weight: bold; font-size: 14px; }
+  .popup-close { background: none; border: none; cursor: pointer; font-size: 16px; color: #6b7280; padding: 0 2px; line-height: 1; }
+  .popup-close:hover { color: #111; }
+  .popup-body { overflow-y: auto; }
+  .popup-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .popup-table thead th {
+    text-align: left; padding: 6px 12px; background: #f9fafb;
+    font-size: 11px; font-weight: 600; color: #6b7280;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    border-bottom: 1px solid #e5e7eb; position: sticky; top: 0;
+  }
+  .popup-table tbody tr { border-bottom: 1px solid #f3f4f6; }
+  .popup-table tbody tr:hover { background: #f9fafb; }
+  .popup-table tbody tr.missing { color: #9ca3af; }
+  .popup-table td { padding: 6px 12px; vertical-align: top; }
+  .idx-cell { color: #6b7280; font-size: 11px; white-space: nowrap; }
+  .val-cell { font-weight: 500; }
 </style>

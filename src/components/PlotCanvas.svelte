@@ -2,10 +2,13 @@
   import { onMount } from 'svelte';
   import * as d3 from 'd3';
 
-  const { layers, electionResult, showVoters, showCandidates, interactive, onPlotClick, centerPreview, highlightedLayerId, onCenterMove } = $props();
+  const { layers, electionResult, showVoters, showCandidates, interactive, onPlotClick, onPointClick, centerPreview, highlightedLayerId, onCenterMove, axisInfo } = $props();
 
   let svgEl;
-  const margin = { top: 20, right: 20, bottom: 40, left: 40 };
+
+  function trunc(s, n) {
+    return s && s.length > n ? s.slice(0, n - 1) + '…' : (s ?? '');
+  }
 
   // Suppresses draw() during an active drag so elements aren't destroyed mid-gesture
   let isDragging = false;
@@ -27,6 +30,10 @@
     if (isDragging || !svgEl) return;
 
     dragRefs = null;
+
+    const margin = axisInfo
+      ? { top: 20, right: 20, bottom: 58, left: 58 }
+      : { top: 20, right: 20, bottom: 40, left: 40 };
 
     const svgNode = d3.select(svgEl);
     const totalW = svgEl.clientWidth || 600;
@@ -51,6 +58,45 @@
     g.append('g').attr('transform', `translate(0,${size})`).call(d3.axisBottom(xScale).ticks(5)).call(styleAxis);
     g.append('g').call(d3.axisLeft(yScale).ticks(5)).call(styleAxis);
 
+    if (axisInfo) {
+      // X axis title
+      g.append('text')
+        .attr('x', size / 2).attr('y', size + 48)
+        .attr('text-anchor', 'middle').attr('font-size', '13px')
+        .attr('fill', '#2D2B27').attr('font-family', 'sans-serif').attr('font-weight', '700')
+        .text(axisInfo.x.label);
+      // X low annotation
+      g.append('text')
+        .attr('x', xScale(0.2)).attr('y', size + 32)
+        .attr('text-anchor', 'end').attr('font-size', '10px')
+        .attr('fill', '#C96442')
+        .text(axisInfo.x.lowLabel);
+      // X high annotation
+      g.append('text')
+        .attr('x', xScale(0.75)).attr('y', size + 32)
+        .attr('text-anchor', 'start').attr('font-size', '10px')
+        .attr('fill', '#C96442')
+        .text(axisInfo.x.highLabel);
+      // Y axis title
+      g.append('text')
+        .attr('transform', `translate(${-48},${size / 2}) rotate(-90)`)
+        .attr('text-anchor', 'middle').attr('font-size', '13px')
+        .attr('fill', '#2D2B27').attr('font-family', 'sans-serif').attr('font-weight', '600')
+        .text(axisInfo.y.label);
+      // Y low annotation starting at y=0.1
+      g.append('text')
+        .attr('transform', `translate(${-32},${yScale(0.1)}) rotate(-90)`)
+        .attr('text-anchor', 'start').attr('font-size', '10px')
+        .attr('fill', '#C96442')
+        .text(axisInfo.y.lowLabel);
+      // Y high annotation starting at y=0.7
+      g.append('text')
+        .attr('transform', `translate(${-32},${yScale(0.75)}) rotate(-90)`)
+        .attr('text-anchor', 'start').attr('font-size', '10px')
+        .attr('fill', '#C96442')
+        .text(axisInfo.y.highLabel);
+    }
+
     g.append('rect')
       .attr('width', size).attr('height', size)
       .attr('fill', 'transparent')
@@ -66,20 +112,26 @@
       for (const layer of layers.filter(l => l.visible && l.type === 'voter')) {
         const lit = highlightedLayerId && layer.id === highlightedLayerId;
         const r = lit ? 6 : 4;
-        const opacity = 0.85;
+        const opacity = 0.75;
+        const fill = layer.color ?? '#3F6E6A';
         g.selectAll(null)
           .data(layer.points)
           .join('circle')
           .attr('cx', d => xScale(d.x))
           .attr('cy', d => yScale(d.y))
           .attr('r', r)
-          .attr('fill', '#3F6E6A')
+          .attr('fill', fill)
           .attr('opacity', opacity)
-          .attr('stroke', lit ? '#2F5D58' : 'none')
+          .attr('stroke', lit ? d3.color(fill)?.darker(0.5) : 'none')
           .attr('stroke-width', lit ? 1.5 : 0)
-          .style('cursor', 'default')
+          .style('cursor', d => d._respondent ? 'pointer' : 'default')
           .on('mouseover', function() { d3.select(this).attr('r', r + 2).attr('opacity', 1); })
-          .on('mouseout',  function() { d3.select(this).attr('r', r).attr('opacity', opacity); });
+          .on('mouseout',  function() { d3.select(this).attr('r', r).attr('opacity', opacity); })
+          .on('click', function(event, d) {
+            if (!d._respondent || !onPointClick) return;
+            event.stopPropagation();
+            onPointClick(d._respondent);
+          });
       }
     }
 
@@ -223,13 +275,22 @@
       } else {
         for (const layer of layers.filter(l => l.visible && l.type === 'candidate')) {
           const lit = highlightedLayerId && layer.id === highlightedLayerId;
+          const fill = layer.color ?? '#C8983A';
+          const stroke = d3.color(fill)?.darker(0.6).formatHex() ?? '#8E6A22';
           layer.points.forEach(p => {
             g.append('path')
+              .datum(p)
               .attr('d', starPath(xScale(p.x), yScale(p.y), lit ? 14 : 10))
-              .attr('fill', '#C8983A')
-              .attr('stroke', lit ? '#B07F1F' : '#8E6A22')
+              .attr('fill', fill)
+              .attr('stroke', stroke)
               .attr('stroke-width', lit ? 1 : 0.5)
-              .attr('opacity', 1);
+              .attr('opacity', 1)
+              .style('cursor', p._profile ? 'pointer' : 'default')
+              .on('click', function(event, d) {
+                if (!d._profile || !onPointClick) return;
+                event.stopPropagation();
+                onPointClick(d._profile);
+              });
           });
         }
       }
@@ -250,6 +311,7 @@
     void showCandidates;
     void centerPreview;
     void highlightedLayerId;
+    void axisInfo;
     draw();
   });
 </script>
