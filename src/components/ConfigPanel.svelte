@@ -2,14 +2,13 @@
   import { store } from '../store.svelte.js';
   import SyntheticTab from './tabs/SyntheticTab.svelte';
   import SurveyTab from './tabs/SurveyTab.svelte';
-  import CustomTab from './tabs/CustomTab.svelte';
 
   const { onAddData, onSelectCenter, onSwitchTab } = $props();
 </script>
 
 <div class="config-panel">
   <div class="tabs">
-    {#each ['synthetic', 'survey', 'custom'] as tab}
+    {#each ['synthetic', 'survey'] as tab}
       <button
         class="tab-btn"
         class:active={store.activeTab === tab}
@@ -24,8 +23,6 @@
       <SyntheticTab {onSelectCenter} />
     {:else if store.activeTab === 'survey'}
       <SurveyTab />
-    {:else}
-      <CustomTab />
     {/if}
   </div>
 

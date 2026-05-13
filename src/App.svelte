@@ -93,19 +93,77 @@
         store.layers = [...store.layers, makeLayer('voter', pts, label, { kind: 'survey' }, layerColor(store.layers.length))];
       }
 
-    } else if (tab === 'custom') {
-      if (!store.uploadedFile) { alert('Please upload a JSON file first.'); return; }
-      const raw = store.uploadedFile.data;
-      const voters = raw.filter(p => p.type === 'voter').map(({ x, y }) => ({ x, y }));
-      const candidates = raw.filter(p => p.type === 'candidate').map(({ x, y }) => ({ x, y }));
-      const newLayers = [];
-      if (voters.length) newLayers.push(makeLayer('voter', voters, formatLabel({ kind: 'custom', filename: store.uploadedFile.name }), null, layerColor(store.layers.length)));
-      if (candidates.length) newLayers.push(makeLayer('candidate', candidates, formatLabel({ kind: 'custom', filename: store.uploadedFile.name })));
-      if (!newLayers.length) { alert('No valid points found in JSON.'); return; }
-      store.layers = [...store.layers, ...newLayers];
     }
 
     store.electionResult = null;
+  }
+
+  function importLayersFromJson(raw, filename) {
+    const fileKind = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw.kind : null;
+    const currentTab = store.activeTab;
+    if (fileKind === 'synthetic' && currentTab === 'survey') {
+      alert('This file is synthetic data, but you\'re on the Survey tab. Switch to the Synthetic tab before importing this file.');
+      return;
+    }
+    if (fileKind === 'survey' && currentTab === 'synthetic') {
+      alert('This file is survey data, but you\'re on the Synthetic tab. Switch to the Survey tab before importing this file.');
+      return;
+    }
+
+    const newLayers = [];
+    const isValidPt = p => p && Number.isFinite(p.x) && Number.isFinite(p.y);
+    if (raw && Array.isArray(raw.layers)) {
+      raw.layers.forEach((l, idx) => {
+        if (l.type !== 'voter' && l.type !== 'candidate') return;
+        const pts = (l.points ?? []).filter(isValidPt);
+        if (!pts.length) return;
+        newLayers.push({
+          id: crypto.randomUUID(),
+          label: l.label ?? formatLabel({ kind: 'custom', filename }),
+          type: l.type,
+          points: pts,
+          visible: l.visible ?? true,
+          color: l.color ?? layerColor(store.layers.length + idx),
+          params: l.params ?? null,
+        });
+      });
+    } else if (Array.isArray(raw)) {
+      const voters = raw.filter(p => p.type === 'voter' && isValidPt(p)).map(({ type, ...rest }) => rest);
+      const candidates = raw.filter(p => p.type === 'candidate' && isValidPt(p)).map(({ type, ...rest }) => rest);
+      if (voters.length) newLayers.push(makeLayer('voter', voters, formatLabel({ kind: 'custom', filename }), null, layerColor(store.layers.length)));
+      if (candidates.length) newLayers.push(makeLayer('candidate', candidates, formatLabel({ kind: 'custom', filename })));
+    } else {
+      alert('Unrecognized JSON shape — expected an export object or an array of {x, y, type} points.');
+      return;
+    }
+    if (!newLayers.length) { alert('No valid points found in JSON.'); return; }
+
+    if (fileKind === 'survey' && raw.survey) {
+      if (raw.survey.xAxis) store.surveyXAxis = raw.survey.xAxis;
+      if (raw.survey.yAxis) store.surveyYAxis = raw.survey.yAxis;
+      if (raw.survey.rankings) store.surveyRankings = raw.survey.rankings;
+    }
+
+    store.layers = [...store.layers, ...newLayers];
+    store.electionResult = null;
+  }
+
+  let importInput;
+  function triggerImport() { importInput?.click(); }
+  function handleImportChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        importLayersFromJson(data, file.name);
+      } catch {
+        alert('Invalid JSON file.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   }
 
   // --- Candidate generation (survey tab) ---
@@ -179,9 +237,18 @@
     const hasCandidates = bundle.some(l => l.type === 'candidate');
     const hasVoters = bundle.some(l => l.type === 'voter');
     if (!hasCandidates || !hasVoters) { alert('Need both voter and candidate layers to run an election.'); return; }
+    const candidateCount = bundle
+      .filter(l => l.type === 'candidate')
+      .reduce((n, l) => n + l.points.length, 0);
+    const requested = Number(store.numWinners);
+    if (!Number.isFinite(requested) || requested < 1) { alert('Number of winners must be at least 1.'); return; }
+    if (requested > candidateCount) {
+      alert(`Cannot pick ${requested} winners from only ${candidateCount} candidate${candidateCount === 1 ? '' : 's'}.`);
+      return;
+    }
     store.isGenerating = true;
     try {
-      store.electionResult = await run_election(bundle, store.method, Number(store.numWinners));
+      store.electionResult = await run_election(bundle, store.method, requested);
     } finally {
       store.isGenerating = false;
     }
@@ -217,11 +284,32 @@
   }
 
   function exportData() {
-    const flat = store.layers.flatMap(l => l.points.map(p => ({ ...p, type: l.type })));
-    const blob = new Blob([JSON.stringify(flat, null, 2)], { type: 'application/json' });
+    const kind = store.activeTab === 'survey' ? 'survey' : 'synthetic';
+    const payload = {
+      version: 2,
+      kind,
+      exportedAt: new Date().toISOString(),
+      layers: store.layers.map(l => ({
+        label: l.label,
+        type: l.type,
+        color: l.color,
+        params: l.params,
+        visible: l.visible,
+        points: l.points,
+      })),
+    };
+    if (kind === 'survey') {
+      payload.survey = {
+        source: 'Fall 2014 Statewide IL Poll',
+        xAxis: store.surveyXAxis,
+        yAxis: store.surveyYAxis,
+        rankings: store.surveyRankings,
+      };
+    }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'saved_data.json';
+    a.download = `${kind}_data.json`;
     a.click();
     URL.revokeObjectURL(a.href);
   }
@@ -242,7 +330,6 @@
         kind, layerColor(store.layers.length)
       )];
       store.electionResult = null;
-      store.addMode = null;
     }
   }
 
@@ -254,6 +341,42 @@
   function startSelectCenter() {
     store.selectingCenter = true;
     store.addMode = null;
+  }
+
+  function onWindowContextMenu(e) {
+    if (store.addMode || store.selectingCenter) {
+      e.preventDefault();
+      store.addMode = null;
+      store.selectingCenter = false;
+    }
+  }
+
+  function isTypingTarget(target) {
+    if (!target) return false;
+    const tag = target.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
+  }
+
+  function onWindowKeydown(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (isTypingTarget(e.target)) return;
+    if (store.tutorialMode) return;
+    const k = e.key.toLowerCase();
+    if (k === 'v') {
+      if (store.activeTab === 'survey') return;
+      e.preventDefault();
+      toggleAddMode('voter');
+    } else if (k === 'c') {
+      if (store.activeTab === 'survey' && !(store.surveyXAxis && store.surveyYAxis && store.surveyXAxis !== store.surveyYAxis)) return;
+      e.preventDefault();
+      toggleAddMode('candidate');
+    } else if (k === 'escape') {
+      if (store.addMode || store.selectingCenter) {
+        e.preventDefault();
+        store.addMode = null;
+        store.selectingCenter = false;
+      }
+    }
   }
 
   function deleteLayer(id) {
@@ -294,18 +417,42 @@
     const xAxis = store.surveyXAxis;
     const yAxis = store.surveyYAxis;
     const data = store.surveyData;
-    if (!data || !xAxis || !yAxis || xAxis === yAxis) return;
-    const existing = untrack(() => store.layers.find(l => l.params?.kind === 'survey'));
-    if (!existing) return;
+    if (!xAxis || !yAxis || xAxis === yAxis) return;
     const xIndex = INDEXES.find(i => i.id === xAxis);
     const yIndex = INDEXES.find(i => i.id === yAxis);
-    const pts = surveyFromData(data, xIndex, yIndex, rankings ?? defaultRankings());
-    if (!pts.length) return;
-    const label = `Survey: ${xIndex.label} × ${yIndex.label} (${pts.length} respondents)`;
+    const rk = rankings ?? defaultRankings();
+    const xWeights = rankingsToWeights(rk[xIndex.id]);
+    const yWeights = rankingsToWeights(rk[yIndex.id]);
+
+    const surveyLayer = untrack(() => store.layers.find(l => l.params?.kind === 'survey'));
+    const candidateLayers = untrack(() =>
+      store.layers.filter(l => l.type === 'candidate' && l.points.some(p => p._profile))
+    );
+    if (!surveyLayer && !candidateLayers.length) return;
+
+    let newSurveyPts = null;
+    let newSurveyLabel = null;
+    if (data && surveyLayer) {
+      newSurveyPts = surveyFromData(data, xIndex, yIndex, rk);
+      newSurveyLabel = `Survey: ${xIndex.label} × ${yIndex.label} (${newSurveyPts.length} respondents)`;
+    }
+
     untrack(() => {
-      store.layers = store.layers.map(l =>
-        l.id === existing.id ? { ...l, points: pts, label } : l
-      );
+      store.layers = store.layers.map(l => {
+        if (surveyLayer && l.id === surveyLayer.id && newSurveyPts?.length) {
+          return { ...l, points: newSurveyPts, label: newSurveyLabel };
+        }
+        if (l.type === 'candidate' && l.points.some(p => p._profile)) {
+          const points = l.points.map(p => {
+            if (!p._profile) return p;
+            const x = scoreRespondent(p._profile, xIndex, xWeights) ?? 0.5;
+            const y = scoreRespondent(p._profile, yIndex, yWeights) ?? 0.5;
+            return { ...p, x, y };
+          });
+          return { ...l, points };
+        }
+        return l;
+      });
       store.electionResult = null;
     });
   });
@@ -368,6 +515,8 @@
   }
 </script>
 
+<svelte:window oncontextmenu={onWindowContextMenu} onkeydown={onWindowKeydown} />
+
 <div class="app">
   <div class="toolbar">
     <div class="toolbar-left" style:visibility={store.tutorialMode ? 'hidden' : 'visible'}>
@@ -375,15 +524,17 @@
         class="toolbar-btn"
         class:active={store.addMode === 'voter'}
         disabled={store.activeTab === 'survey'}
+        title="Add voter (press v)"
         onclick={() => toggleAddMode('voter')}>
-        +voter
+        +voter <span class="kbd">v</span>
       </button>
       <button
         class="toolbar-btn"
         class:active={store.addMode === 'candidate'}
         disabled={store.activeTab === 'survey' && !(store.surveyXAxis && store.surveyYAxis && store.surveyXAxis !== store.surveyYAxis)}
+        title="Add candidate (press c)"
         onclick={() => toggleAddMode('candidate')}>
-        +candidate
+        +candidate <span class="kbd">c</span>
       </button>
     </div>
     <div class="toolbar-center">
@@ -396,12 +547,28 @@
     </div>
     <div class="toolbar-right" style:visibility={store.tutorialMode ? 'hidden' : 'visible'}>
       <button class="toolbar-btn" onclick={clearAll}>clear</button>
+      <button class="toolbar-btn" onclick={triggerImport} title="Import a previously exported JSON file">import</button>
       <button class="toolbar-btn" onclick={exportData}>export</button>
+      <input
+        bind:this={importInput}
+        type="file" accept=".json"
+        style="display:none"
+        onchange={handleImportChange}
+      >
     </div>
   </div>
 
   <div class="main">
     <div class="plot-area">
+      {#if store.addMode}
+        <div class="mode-bubble" role="status">
+          <span class="mode-dot"></span>
+          <span>
+            <strong>Add {store.addMode} mode</strong> — click on the plot to drop a {store.addMode}.
+            <span class="mode-hint">Right-click (or press Esc) to exit.</span>
+          </span>
+        </div>
+      {/if}
       <PlotCanvas
         layers={activeLayers}
         electionResult={activeElectionResult}
@@ -534,9 +701,41 @@
   .toolbar-btn:hover:not(:disabled) { background: rgba(45,43,39,0.07); }
   .toolbar-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .toolbar-btn.active { background: rgba(201,100,66,0.12); border-color: #C96442; color: #C96442; }
+  .kbd {
+    display: inline-block; margin-left: 4px; padding: 0 5px;
+    border: 1px solid #C0BAB2; border-bottom-width: 2px; border-radius: 3px;
+    background: #FAF7F2; color: #6B6560; font-size: 10px; font-weight: 600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height: 1.4;
+  }
+  .toolbar-btn.active .kbd { border-color: #C96442; color: #C96442; background: #fff; }
 
   .main { display: flex; flex: 1; overflow: hidden; }
-  .plot-area { flex: 1; overflow: hidden; border: 1px solid #D5CFC6; border-right: none; background: #F5F0E8; }
+  .plot-area { position: relative; flex: 1; overflow: hidden; border: 1px solid #D5CFC6; border-right: none; background: #F5F0E8; }
+  .mode-bubble {
+    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 14px; border-radius: 999px;
+    background: #2D2B27; color: #F5F0E8; font-size: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    pointer-events: none; z-index: 10;
+    animation: bubble-in 0.18s ease-out;
+  }
+  .mode-bubble strong { color: #fff; font-weight: 600; text-transform: capitalize; }
+  .mode-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #C96442;
+    box-shadow: 0 0 0 0 rgba(201,100,66,0.6);
+    animation: bubble-pulse 1.4s ease-out infinite;
+  }
+  .mode-hint { opacity: 0.7; margin-left: 4px; }
+  @keyframes bubble-in {
+    from { opacity: 0; transform: translate(-50%, -6px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+  }
+  @keyframes bubble-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(201,100,66,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(201,100,66,0); }
+    100% { box-shadow: 0 0 0 0 rgba(201,100,66,0); }
+  }
 
   .resize-handle {
     width: 5px;

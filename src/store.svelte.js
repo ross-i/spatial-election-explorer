@@ -1,5 +1,5 @@
 class AppStore {
-  activeTab = $state('synthetic');
+  activeTab = $state('synthetic'); // 'synthetic' | 'survey'
   distribution = $state(null);
   centerX = $state(0.5);
   centerY = $state(0.5);

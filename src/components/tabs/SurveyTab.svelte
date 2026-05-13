@@ -32,21 +32,48 @@
   }
 
   let dragging = $state(null);
+  let listEls = {}; // indexId -> ul element
 
-  function onDragStart(indexId, col) { dragging = { indexId, col }; }
-
-  function onDrop(indexId, targetCol) {
-    if (!dragging || dragging.indexId !== indexId || dragging.col === targetCol) return;
-    const order = [...store.surveyRankings[indexId]];
-    const from = order.indexOf(dragging.col);
-    const to   = order.indexOf(targetCol);
-    order.splice(from, 1);
-    order.splice(to, 0, dragging.col);
-    store.surveyRankings = { ...store.surveyRankings, [indexId]: order };
-    dragging = null;
+  function onDragStart(e, indexId, col) {
+    dragging = { indexId, col };
+    // Required for Firefox to actually start the drag
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', col); } catch {}
+    }
   }
 
   function onDragOver(e) { e.preventDefault(); }
+
+  function commitReorder(indexId, clientY) {
+    const ul = listEls[indexId];
+    if (!ul) return;
+    const order = [...store.surveyRankings[indexId]];
+    const from = order.indexOf(dragging.col);
+    if (from < 0) return;
+    const items = ul.querySelectorAll('.rank-item');
+    let to = order.length;
+    for (let i = 0; i < items.length; i++) {
+      const rect = items[i].getBoundingClientRect();
+      if (clientY < rect.top + rect.height / 2) { to = i; break; }
+    }
+    if (to > from) to--;
+    if (to === from) return;
+    order.splice(from, 1);
+    order.splice(to, 0, dragging.col);
+    store.surveyRankings = { ...store.surveyRankings, [indexId]: order };
+  }
+
+  function onDragEnd(e) {
+    if (dragging) commitReorder(dragging.indexId, e.clientY);
+    dragging = null;
+  }
+
+  function onListDrop(e, indexId) {
+    e.preventDefault();
+    if (dragging && dragging.indexId === indexId) commitReorder(indexId, e.clientY);
+    dragging = null;
+  }
 
   function resetRankings(indexId) {
     store.surveyRankings = { ...store.surveyRankings, [indexId]: defaultRankings()[indexId] };
@@ -102,15 +129,19 @@
       <div class="rank-panel">
         <div class="direction-hint">0 ← {idx.lowLabel} &nbsp;...&nbsp; {idx.highLabel} → 1</div>
         <div class="rank-hint">drag to re-rank — top = most important to voters</div>
-        <ul class="rank-list">
+        <ul
+          class="rank-list"
+          bind:this={listEls[idx.id]}
+          ondragover={onDragOver}
+          ondrop={(e) => onListDrop(e, idx.id)}
+        >
           {#each rankings as col, i}
             {@const q = idx.questions.find(q => q.col === col)}
             <li
               class="rank-item {dragging?.col === col ? 'dragging' : ''}"
               draggable="true"
-              ondragstart={() => onDragStart(idx.id, col)}
-              ondragover={onDragOver}
-              ondrop={() => onDrop(idx.id, col)}
+              ondragstart={(e) => onDragStart(e, idx.id, col)}
+              ondragend={onDragEnd}
             >
               <span class="rank-num">{i + 1}</span>
               <span class="rank-q">{q?.label ?? col}</span>
@@ -150,15 +181,19 @@
       <div class="rank-panel">
         <div class="direction-hint">0 ← {idx.lowLabel} &nbsp;...&nbsp; {idx.highLabel} → 1</div>
         <div class="rank-hint">drag to re-rank — top = most important to voters</div>
-        <ul class="rank-list">
+        <ul
+          class="rank-list"
+          bind:this={listEls[idx.id]}
+          ondragover={onDragOver}
+          ondrop={(e) => onListDrop(e, idx.id)}
+        >
           {#each rankings as col, i}
             {@const q = idx.questions.find(q => q.col === col)}
             <li
               class="rank-item {dragging?.col === col ? 'dragging' : ''}"
               draggable="true"
-              ondragstart={() => onDragStart(idx.id, col)}
-              ondragover={onDragOver}
-              ondrop={() => onDrop(idx.id, col)}
+              ondragstart={(e) => onDragStart(e, idx.id, col)}
+              ondragend={onDragEnd}
             >
               <span class="rank-num">{i + 1}</span>
               <span class="rank-q">{q?.label ?? col}</span>
@@ -234,7 +269,7 @@
   .direction-hint { font-size: 10px; color: #9ca3af; font-style: italic; }
   .rank-hint { font-size: 11px; color: #6b7280; }
 
-  .rank-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+  .rank-list { list-style: none; margin: 4px 0 0; padding: 14px 0; display: flex; flex-direction: column; gap: 3px; }
   .rank-item {
     display: flex; align-items: center; gap: 8px;
     background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px;
