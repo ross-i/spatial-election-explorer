@@ -48,7 +48,6 @@
 <div class="data-panel">
   <div class="panel-header">
     <span class="panel-title">Data Points</span>
-<<<<<<< feat/michael
     {#if store.activeTab === "survey"}
       {@const axesReady =
         store.surveyXAxis &&
@@ -69,13 +68,6 @@
           title={axesReady ? "" : "Select both axes first"}
           >Profile Candidate</button
         >
-=======
-    {#if store.activeTab === 'survey'}
-      {@const axesReady = store.surveyXAxis && store.surveyYAxis && store.surveyXAxis !== store.surveyYAxis}
-      <span class="cand-btn-group" data-walkthrough="survey-candidate-btns">
-        <button class="cand-btn primary" onclick={onGenerateRandom} disabled={!axesReady} title={axesReady ? '' : 'Select both axes first'}>Random Candidate</button>
-        <button class="cand-btn primary" onclick={onOpenProfiler} disabled={!axesReady} title={axesReady ? '' : 'Select both axes first'}>Profile Candidate</button>
->>>>>>> dev
       </span>
     {/if}
   </div>
@@ -162,8 +154,7 @@
     {/each}
   </div>
 
-<<<<<<< feat/michael
-  <div class="generate-row">
+  <div class="generate-row" data-walkthrough="run-election-row">
     <select
       bind:value={store.method}
       class="method-select"
@@ -173,13 +164,6 @@
     >
       {#each methodOptions as opt (opt.id)}
         <option value={opt.id}>{opt.label}</option>
-=======
-  <div class="generate-row" data-walkthrough="run-election-row">
-    <select bind:value={store.method} class="method-select"
-      onchange={() => { store.electionResult = null; }}>
-      {#each METHODS as m}
-        <option value={m}>{m}</option>
->>>>>>> dev
       {/each}
     </select>
     <input
@@ -259,11 +243,6 @@
     align-items: center;
     gap: 12px;
   }
-<<<<<<< feat/michael
-=======
-  .color-swatch { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-  .cand-btn-group { display: inline-flex; gap: 6px; }
->>>>>>> dev
   .cand-btn {
     padding: 2px 7px;
     border-radius: 3px;
