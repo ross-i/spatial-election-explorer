@@ -257,15 +257,30 @@
     }
 
     if (showCandidates) {
+<<<<<<< feat/michael
       const winnerIds = resolveWinnerIds(layers, electionResult);
       const postElection = Boolean(electionResult?.length) && winnerIds.size > 0;
 
+=======
+      const winnerIds = new Set();
+      const winnerPositions = [];
+      if (electionResult) {
+        for (const l of electionResult) {
+          for (const p of l.points) {
+            if (!p.winner) continue;
+            if (p.id !== undefined) winnerIds.add(p.id);
+            else winnerPositions.push({ x: p.x, y: p.y });
+          }
+        }
+      }
+>>>>>>> dev
       for (const layer of layers.filter(l => l.visible && l.type === 'candidate')) {
         const lit = highlightedLayerId && layer.id === highlightedLayerId;
         const baseFill = layer.color ?? CANDIDATE_LAYER_COLOR;
         const baseStroke = d3.color(baseFill)?.darker(0.5).formatHex() ?? '#B8634A';
         layer.points.forEach((p, i) => {
-          const isWinner = winnerIds.has(`${layer.id}-${i}`);
+          const isWinner = winnerIds.has(`${layer.id}-${i}`) ||
+            winnerPositions.some(w => Math.abs(w.x - p.x) < 1e-9 && Math.abs(w.y - p.y) < 1e-9);
           const cx = xScale(p.x), cy = yScale(p.y);
           const sz = postElection ? 10 : (lit ? 14 : 10);
           let fill = baseFill;

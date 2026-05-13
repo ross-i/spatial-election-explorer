@@ -113,36 +113,6 @@ export const TUTORIALS = [
     ],
   },
   {
-    title: 'Borda Count',
-    subtitle: 'Rewarding broad appeal',
-    steps: [
-      {
-        heading: 'The same voters — but now they rank all candidates',
-        content: [
-          `Three candidates are spread across the policy space: A on the left, B in the center, C on the right. Each voter group is roughly the same size.`,
-          `Under Borda Count, voters rank all candidates. A candidate earns 2 points for each first-place ranking, 1 for second, and 0 for last. The highest total wins.`,
-          `With three equally-sized blocs, who has the broadest appeal?`,
-        ],
-        layers: bordaLayers,
-        electionResult: null,
-      },
-      {
-        heading: 'Candidate B wins — the consensus choice',
-        content: [
-          `The left bloc ranks A first, B second, C last. The right bloc ranks C first, B second, A last. The center bloc ranks B first.`,
-          `Candidate B earns a second-place vote from nearly everyone — accumulating enough points to win, even without being anyone's passionate first choice.`,
-          `Borda Count tends to elect centrist "consensus" candidates. That can reduce polarization, but critics argue it underweights strong majority preferences.`,
-        ],
-        layers: bordaLayers,
-        electionResult: result([
-          { x: 0.18, y: 0.5, winner: false },
-          { x: 0.52, y: 0.5, winner: true  },
-          { x: 0.82, y: 0.5, winner: false },
-        ]),
-      },
-    ],
-  },
-  {
     title: 'Instant-Runoff (IRV)',
     subtitle: 'Eliminating the weakest, round by round',
     steps: [
@@ -168,6 +138,36 @@ export const TUTORIALS = [
           { x: 0.2,  y: 0.5,  winner: false },
           { x: 0.73, y: 0.37, winner: true  },
           { x: 0.68, y: 0.63, winner: false },
+        ]),
+      },
+    ],
+  },
+  {
+    title: 'Borda Count',
+    subtitle: 'Rewarding broad appeal',
+    steps: [
+      {
+        heading: 'The same voters — but now they rank all candidates',
+        content: [
+          `Three candidates are spread across the policy space: A on the left, B in the center, C on the right. Each voter group is roughly the same size.`,
+          `Under Borda Count, voters rank all candidates. A candidate earns 2 points for each first-place ranking, 1 for second, and 0 for last. The highest total wins.`,
+          `With three equally-sized blocs, who has the broadest appeal?`,
+        ],
+        layers: bordaLayers,
+        electionResult: null,
+      },
+      {
+        heading: 'Candidate B wins — the consensus choice',
+        content: [
+          `The left bloc ranks A first, B second, C last. The right bloc ranks C first, B second, A last. The center bloc ranks B first.`,
+          `Candidate B earns a second-place vote from nearly everyone — accumulating enough points to win, even without being anyone's passionate first choice.`,
+          `Borda Count tends to elect centrist "consensus" candidates. That can reduce polarization, but critics argue it underweights strong majority preferences.`,
+        ],
+        layers: bordaLayers,
+        electionResult: result([
+          { x: 0.18, y: 0.5, winner: false },
+          { x: 0.52, y: 0.5, winner: true  },
+          { x: 0.82, y: 0.5, winner: false },
         ]),
       },
     ],
@@ -200,6 +200,90 @@ export const TUTORIALS = [
           { x: 0.75, y: 0.50, winner: true  },
           { x: 0.75, y: 0.30, winner: false },
         ]),
+      },
+    ],
+  },
+  {
+    title: 'Survey Mode',
+    subtitle: 'From hypothetical voters to real respondents',
+    walkthrough: true,
+    steps: [
+      {
+        heading: 'Welcome to the Survey tab',
+        content: [
+          `So far the voters and candidates have been discussed in an abstract policy space. The Survey tab swaps that out for a real electorate: respondents from the Fall 2014 Statewide IL Poll, each plotted from their own survey answers.`,
+          `The Survey tab is already open on the right. The plot stays empty until you pick what the two axes mean — let's do that next.`,
+        ],
+        target: '[data-walkthrough="survey-tab-btn"]',
+        prep: (s) => { s.activeTab = 'survey'; },
+      },
+      {
+        heading: 'Pick an index for the X axis',
+        content: [
+          `Each respondent answered many questions, grouped into thematic indexes (Role of Government, Social Issues, Guns). Click any pill on the X row to choose what the horizontal axis means.`,
+          `The axis runs from 0 to 1, with end labels telling you what each extreme means. Go ahead and pick one — we'll move on as soon as you do.`,
+        ],
+        target: '[data-walkthrough="x-axis-pills"]',
+        prep: (s) => {
+          s.activeTab = 'survey';
+          s.surveyXAxis = null;
+          s.surveyYAxis = null;
+          s.surveyXRankOpen = false;
+          s.surveyYRankOpen = false;
+        },
+        advanceWhen: (s) => !!s.surveyXAxis,
+      },
+      {
+        heading: 'Rank the questions inside the index',
+        content: [
+          `Now that you've picked an index, the ranking panel for it has opened. Each index is built from several questions, and they don't all matter equally — the top question gets the largest weight, the bottom one the smallest.`,
+          `Drag a row to reorder. The weight percentages on the right update live, and once respondents are on the plot they'll re-project as you drag. "reset order" returns to the default ranking.`,
+        ],
+        target: '[data-walkthrough="rank-panel"]',
+        prep: (s) => {
+          s.activeTab = 'survey';
+          if (!s.surveyXAxis) s.surveyXAxis = 'gov';
+          s.surveyXRankOpen = true;
+        },
+      },
+      {
+        heading: 'Pick a different index for the Y axis',
+        content: [
+          `Same idea — choose an index for the vertical axis. It just needs to be different from your X pick.`,
+        ],
+        target: '[data-walkthrough="y-axis-pills"]',
+        prep: (s) => {
+          s.activeTab = 'survey';
+          if (!s.surveyXAxis) s.surveyXAxis = 'gov';
+          s.surveyYAxis = null;
+        },
+        advanceWhen: (s) => !!s.surveyYAxis && s.surveyYAxis !== s.surveyXAxis,
+      },
+      {
+        heading: 'Add candidates',
+        content: [
+          `With both axes set, you can populate the plot with candidates. "Random Candidate" samples a real respondent from the survey and drops them in with their full profile attached. "Profile Candidate" lets you answer the survey yourself to place a custom candidate.`,
+          `Click any candidate dot to see the survey answers behind their position — a small profile card opens.`,
+        ],
+        target: '[data-walkthrough="survey-candidate-btns"]',
+        prep: (s) => {
+          s.activeTab = 'survey';
+          if (!s.surveyXAxis) s.surveyXAxis = 'gov';
+          if (!s.surveyYAxis || s.surveyYAxis === s.surveyXAxis) s.surveyYAxis = 'social';
+        },
+      },
+      {
+        heading: 'Run the election',
+        content: [
+          `Once you have candidates placed, pick a voting rule from the dropdown and click "run election." The winners are highlighted on the plot — just like in the earlier tutorials, but now over real survey respondents.`,
+          `That's the full loop: shape the space with rankings, populate it with candidates, and compare voting rules on real data. Click "back to explorer" whenever you're ready.`,
+        ],
+        target: '[data-walkthrough="run-election-row"]',
+        prep: (s) => {
+          s.activeTab = 'survey';
+          if (!s.surveyXAxis) s.surveyXAxis = 'gov';
+          if (!s.surveyYAxis || s.surveyYAxis === s.surveyXAxis) s.surveyYAxis = 'social';
+        },
       },
     ],
   },

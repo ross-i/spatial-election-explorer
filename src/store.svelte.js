@@ -38,6 +38,8 @@ class AppStore {
   tutorialMode = $state(false);
   activeTutorialIdx = $state(0);
   activeTutorialStep = $state(0);
+  surveyXRankOpen = $state(false);
+  surveyYRankOpen = $state(false);
 }
 
 export const store = new AppStore();

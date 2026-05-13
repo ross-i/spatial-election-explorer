@@ -12,6 +12,7 @@
       <button
         class="tab-btn"
         class:active={store.activeTab === tab}
+        data-walkthrough={tab === 'survey' ? 'survey-tab-btn' : null}
         onclick={() => onSwitchTab(tab)}>
         {tab.charAt(0).toUpperCase() + tab.slice(1)}
       </button>
@@ -33,13 +34,14 @@
       onclick={() => { store.editingLayerId = null; store.distribution = null; }}>
       cancel
     </button>
-    <button
-      class="btn-add"
-      onclick={onAddData}
-      disabled={store.activeTab === 'survey' && !store.editingLayerId && store.layers.some(l => l.params?.kind === 'survey')}
-    >
-      {store.editingLayerId ? 'update' : store.activeTab === 'survey' ? 'add survey respondent data' : 'add data'}
-    </button>
+    {#if store.activeTab !== 'survey' || store.editingLayerId}
+      <button
+        class="btn-add"
+        onclick={onAddData}
+      >
+        {store.editingLayerId ? 'update' : 'add data'}
+      </button>
+    {/if}
   </div>
 </div>
 
