@@ -12,9 +12,6 @@
       .then(d => { store.surveyData = d; });
   }
 
-  let xOpen = $state(false);
-  let yOpen = $state(false);
-
   let xAxis = $derived(store.surveyXAxis);
   let yAxis = $derived(store.surveyYAxis);
 
@@ -22,12 +19,12 @@
     if (axis === 'x') {
       if (id === store.surveyYAxis) store.surveyYAxis = store.surveyXAxis;
       store.surveyXAxis = id;
-      xOpen = true;
+      store.surveyXRankOpen = true;
     } else {
       if (id === store.surveyXAxis) store.surveyXAxis = store.surveyYAxis;
       store.surveyYAxis = id;
-      yOpen = true;
-      xOpen = false;
+      store.surveyYRankOpen = true;
+      store.surveyXRankOpen = false;
     }
   }
 
@@ -103,7 +100,7 @@
   {/if}
 
   <!-- X axis -->
-  <div class="axis-section">
+  <div class="axis-section" data-walkthrough="x-axis-pills">
     <div class="axis-row">
       <span class="axis-tag x-tag">X</span>
       <div class="axis-pills">
@@ -115,13 +112,13 @@
         {/each}
       </div>
       {#if xAxis}
-        <button class="collapse-btn" onclick={() => xOpen = !xOpen}>
-          {xOpen ? '▲' : '▼'}
+        <button class="collapse-btn" onclick={() => store.surveyXRankOpen = !store.surveyXRankOpen}>
+          {store.surveyXRankOpen ? '▲' : '▼'}
         </button>
       {/if}
     </div>
 
-    {#if xOpen && xAxis}
+    {#if store.surveyXRankOpen && xAxis}
       {@const idx = indexById(xAxis)}
       {@const rankings = store.surveyRankings?.[idx.id] ?? idx.questions.map(q => q.col)}
       <div class="rank-panel">
@@ -154,7 +151,7 @@
   </div>
 
   <!-- Y axis -->
-  <div class="axis-section">
+  <div class="axis-section" data-walkthrough="y-axis-pills">
     <div class="axis-row">
       <span class="axis-tag y-tag">Y</span>
       <div class="axis-pills">
@@ -166,16 +163,16 @@
         {/each}
       </div>
       {#if yAxis}
-        <button class="collapse-btn" onclick={() => yOpen = !yOpen}>
-          {yOpen ? '▲' : '▼'}
+        <button class="collapse-btn" onclick={() => store.surveyYRankOpen = !store.surveyYRankOpen}>
+          {store.surveyYRankOpen ? '▲' : '▼'}
         </button>
       {/if}
     </div>
 
-    {#if yOpen && yAxis}
+    {#if store.surveyYRankOpen && yAxis}
       {@const idx = indexById(yAxis)}
       {@const rankings = store.surveyRankings?.[idx.id] ?? idx.questions.map(q => q.col)}
-      <div class="rank-panel">
+      <div class="rank-panel" data-walkthrough="rank-panel">
         <div class="direction-hint">0 ← {idx.lowLabel} &nbsp;...&nbsp; {idx.highLabel} → 1</div>
         <div class="rank-hint">drag to re-rank — top = most important to voters</div>
         <ul

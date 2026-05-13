@@ -203,4 +203,93 @@ export const TUTORIALS = [
       },
     ],
   },
+  {
+    title: 'Survey Mode',
+    subtitle: 'From hypothetical voters to real respondents',
+    walkthrough: true,
+    steps: [
+      {
+        heading: 'Switch to the Survey tab',
+        content: [
+          `So far the voters and candidates have been placed by hand in an abstract policy space. The Survey tab swaps that out for a real electorate: respondents from the Fall 2014 Statewide IL Poll, each plotted from their own survey answers.`,
+          `The Survey tab is already open on the right. The plot stays empty until you pick what the two axes mean — let's do that next.`,
+        ],
+        target: '[data-walkthrough="survey-tab-btn"]',
+        prep: (s) => { s.activeTab = 'survey'; },
+      },
+      {
+        heading: 'Pick an index for the X axis',
+        content: [
+          `Each respondent answered many questions, grouped into thematic indexes (Role of Government, Social Issues, Guns). Click any pill on the X row to project respondents along that index.`,
+          `The axis runs from 0 to 1, with end labels telling you what each extreme means. Try clicking a pill — the plot will populate with one dot per respondent once both axes are set.`,
+        ],
+        target: '[data-walkthrough="x-axis-pills"]',
+        prep: (s) => { s.activeTab = 'survey'; s.surveyXAxis = null; s.surveyYAxis = null; },
+      },
+      {
+        heading: 'Pick a different index for the Y axis',
+        content: [
+          `Now choose a second, different index for Y. X and Y must differ — otherwise every respondent collapses onto the diagonal.`,
+          `Once both axes are set, every respondent's position is computed from their actual answers along the two indexes.`,
+        ],
+        target: '[data-walkthrough="y-axis-pills"]',
+        prep: (s) => { s.activeTab = 'survey'; if (!s.surveyXAxis) s.surveyXAxis = 'gov'; s.surveyYAxis = null; },
+      },
+      {
+        heading: 'Re-rank questions inside an index',
+        content: [
+          `Each index is built from several questions, and they don't all matter equally. The ranking panel below the active pill lets you drag questions up or down — the top question gets the largest weight, the bottom one the smallest.`,
+          `Try dragging a row. The whole respondent cloud re-projects live so you can see how sensitive the spatial picture is to which issues you treat as central. "reset order" returns to the default.`,
+        ],
+        target: '[data-walkthrough="rank-panel"]',
+        prep: (s) => {
+          s.activeTab = 'survey';
+          if (!s.surveyXAxis) s.surveyXAxis = 'gov';
+          if (!s.surveyYAxis || s.surveyYAxis === s.surveyXAxis) {
+            s.surveyYAxis = s.surveyXAxis === 'social' ? 'gov' : 'social';
+          }
+          s.surveyYRankOpen = true;
+        },
+      },
+      {
+        heading: 'Load the survey respondents onto the plot',
+        content: [
+          `Picking axes alone doesn't draw anyone yet. Click "add survey respondent data" to project every respondent in the IL Poll onto the plot using the indexes you chose.`,
+          `Each dot is one real respondent, positioned by their actual answers. Re-ranking or switching an axis re-projects them live, so you can keep tweaking after they're loaded.`,
+        ],
+        target: '[data-walkthrough="add-data-btn"]',
+        prep: (s) => {
+          s.activeTab = 'survey';
+          if (!s.surveyXAxis) s.surveyXAxis = 'gov';
+          if (!s.surveyYAxis || s.surveyYAxis === s.surveyXAxis) s.surveyYAxis = 'social';
+        },
+      },
+      {
+        heading: 'Add candidates',
+        content: [
+          `With both axes set, you can populate the plot with candidates. "Random Candidate" samples a real respondent from the survey and drops them in with their full profile attached. "Profile Candidate" lets you answer the survey yourself to place a custom candidate.`,
+          `Click any candidate dot to see the survey answers behind their position — a small profile card opens.`,
+        ],
+        target: '[data-walkthrough="survey-candidate-btns"]',
+        prep: (s) => {
+          s.activeTab = 'survey';
+          if (!s.surveyXAxis) s.surveyXAxis = 'gov';
+          if (!s.surveyYAxis || s.surveyYAxis === s.surveyXAxis) s.surveyYAxis = 'social';
+        },
+      },
+      {
+        heading: 'Run the election',
+        content: [
+          `Once you have candidates placed, pick a voting rule from the dropdown and click "run election." The winners are highlighted on the plot — just like in the earlier tutorials, but now over real survey respondents.`,
+          `That's the full loop: shape the space with rankings, populate it with candidates, and compare voting rules on real data. Click "back to explorer" whenever you're ready.`,
+        ],
+        target: '[data-walkthrough="run-election-btn"]',
+        prep: (s) => {
+          s.activeTab = 'survey';
+          if (!s.surveyXAxis) s.surveyXAxis = 'gov';
+          if (!s.surveyYAxis || s.surveyYAxis === s.surveyXAxis) s.surveyYAxis = 'social';
+        },
+      },
+    ],
+  },
 ];
