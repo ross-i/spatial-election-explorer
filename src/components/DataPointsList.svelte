@@ -1,12 +1,25 @@
 <script>
   import { store } from '../store.svelte.js';
-  import { ELECTION_METHOD_IDS, electionMethodLabel } from '../lib/electionRules.js';
+  import {
+    electionMethodsForNumWinners,
+    coerceElectionMethod,
+  } from '../lib/electionRules.js';
   import pencilIcon from '../assets/pencil.svg';
   import eyeIcon from '../assets/eye.svg';
   import eyeOffIcon from '../assets/eye-off.svg';
   import trashIcon from '../assets/trash.svg';
 
   const { onGenerate, onDelete, onToggleVisibility, onStartEdit, onGenerateRandom, onOpenProfiler, onEditCandidate } = $props();
+
+  let methodOptions = $derived(electionMethodsForNumWinners(store.numWinners));
+
+  $effect(() => {
+    const coerced = coerceElectionMethod(store.numWinners, store.method);
+    if (coerced !== store.method) {
+      store.method = coerced;
+      store.electionResult = null;
+    }
+  });
 </script>
 
 <div class="data-panel">
@@ -61,8 +74,8 @@
   <div class="generate-row">
     <select bind:value={store.method} class="method-select"
       onchange={() => { store.electionResult = null; }}>
-      {#each ELECTION_METHOD_IDS as m}
-        <option value={m}>{electionMethodLabel(m)}</option>
+      {#each methodOptions as opt (opt.id)}
+        <option value={opt.id}>{opt.label}</option>
       {/each}
     </select>
     <input type="number" class="winners-input" min="1" bind:value={store.numWinners} title="# winners"
