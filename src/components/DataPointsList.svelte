@@ -4,6 +4,7 @@
     electionMethodsForNumWinners,
     coerceElectionMethod,
   } from '../lib/electionRules.js';
+  import { VOTER_LAYER_COLOR, CANDIDATE_LAYER_COLOR } from '../lib/layerUtils.js';
   import pencilIcon from '../assets/pencil.svg';
   import eyeIcon from '../assets/eye.svg';
   import eyeOffIcon from '../assets/eye-off.svg';
@@ -41,7 +42,7 @@
         onclick={() => { store.highlightedLayerId = store.highlightedLayerId === layer.id ? null : layer.id; }}
         style="cursor: pointer;"
       >
-        <span class="color-swatch" style:background={layer.color ?? (layer.type === 'candidate' ? '#C8983A' : '#3F6E6A')}></span>
+        <span class="color-swatch" style:background={layer.type === 'voter' ? VOTER_LAYER_COLOR : (layer.color ?? CANDIDATE_LAYER_COLOR)}></span>
         <span class="layer-label" class:editing={store.editingLayerId === layer.id} title={layer.label}>{layer.label}</span>
         {#if layer.params?.kind === 'survey_candidate'}
           <button class="icon-btn" onclick={() => onEditCandidate?.(layer.id)} title="re-answer questions">
@@ -125,8 +126,8 @@
     white-space: nowrap;
   }
   .cand-btn:hover { background: #EDE8DF; }
-  .cand-btn.primary { background: #C96442; color: #fff; border-color: #C96442; }
-  .cand-btn.primary:hover:not(:disabled) { background: #A84F32; }
+  .cand-btn.primary { background: #CC7857; color: #fff; border-color: #CC7857; }
+  .cand-btn.primary:hover:not(:disabled) { background: #B8634A; }
   .cand-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .layer-list { flex: 1; overflow-y: auto; padding: 2px 0; background: #EDE8DF; }
   .layer-row {
@@ -140,7 +141,7 @@
   }
   .layer-row:hover { background: #FAF7F2; }
   .layer-row.hidden { opacity: 0.4; }
-  .layer-row.highlighted { background: #F5EDE6; border-left: 3px solid #C96442; padding-left: 5px; }
+  .layer-row.highlighted { background: #F5EDE6; border-left: 3px solid #CC7857; padding-left: 5px; }
   .layer-label {
     flex: 1;
     overflow: hidden;
@@ -150,8 +151,8 @@
     font-size: 11px;
     color: #6B6560;
   }
-  .layer-label.editing { color: #C96442; font-weight: 600; }
-  .cancel-btn { font-size: 11px; color: #C96442; font-weight: 700; padding: 2px 5px; }
+  .layer-label.editing { color: #CC7857; font-weight: 600; }
+  .cancel-btn { font-size: 11px; color: #CC7857; font-weight: 700; padding: 2px 5px; }
   .icon-btn {
     border: none;
     background: none;
@@ -189,7 +190,7 @@
     padding: 5px 14px;
     border: none;
     border-radius: 4px;
-    background: #C96442;
+    background: #CC7857;
     color: #fff;
     cursor: pointer;
     font-size: 12px;
@@ -199,8 +200,8 @@
     align-items: center;
     gap: 5px;
   }
-  .btn-generate:hover:not(:disabled) { background: #A84F32; }
-  .btn-generate:disabled { background: #A88472; cursor: not-allowed; display: flex; align-items: center; gap: 5px; }
+  .btn-generate:hover:not(:disabled) { background: #B8634A; }
+  .btn-generate:disabled { background: #C5A89E; cursor: not-allowed; display: flex; align-items: center; gap: 5px; }
   .spinner {
     display: inline-block;
     width: 10px;

@@ -69,8 +69,8 @@
   .tab-btn.active {
     background: #EDE8DF;
     font-weight: 700;
-    color: #C96442;
-    border-bottom: 2px solid #C96442;
+    color: #CC7857;
+    border-bottom: 2px solid #CC7857;
   }
   .tab-body { flex: 1; padding: 14px 12px; overflow-y: auto; }
   .add-row {
@@ -86,14 +86,14 @@
     padding: 5px 16px;
     border: none;
     border-radius: 4px;
-    background: #C96442;
+    background: #CC7857;
     color: #fff;
     cursor: pointer;
     font-size: 13px;
     font-weight: 600;
     transition: background 0.1s;
   }
-  .btn-add:hover:not(:disabled) { background: #A84F32; }
+  .btn-add:hover:not(:disabled) { background: #B8634A; }
   .btn-add:disabled { opacity: 0.35; cursor: not-allowed; }
   .btn-cancel {
     padding: 5px 14px;

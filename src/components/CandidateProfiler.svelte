@@ -145,16 +145,16 @@
   .header-right { display: flex; align-items: center; gap: 8px; }
   .create-btn {
     padding: 4px 12px; border-radius: 5px; border: none;
-    background: #C96442; color: white; cursor: pointer; font-size: 12px; font-weight: 600;
+    background: #CC7857; color: white; cursor: pointer; font-size: 12px; font-weight: 600;
     transition: background 0.1s;
   }
-  .create-btn:hover:not(:disabled) { background: #a84f32; }
+  .create-btn:hover:not(:disabled) { background: #B8634A; }
   .create-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .close-btn { background: none; border: none; cursor: pointer; font-size: 15px; color: #6b7280; }
   .close-btn:hover { color: #111; }
 
   .progress-bar { height: 3px; background: #e5e7eb; }
-  .progress-fill { height: 100%; background: #C96442; transition: width 0.2s; }
+  .progress-fill { height: 100%; background: #CC7857; transition: width 0.2s; }
   .progress-label { font-size: 11px; color: #9ca3af; padding: 5px 16px 0; }
 
   .question-body { padding: 18px 16px; flex: 1; }
@@ -166,8 +166,8 @@
     cursor: pointer; font-size: 13px; transition: background 0.1s, border-color 0.1s;
   }
   .option-label:hover { background: #f9fafb; border-color: #d1d5db; }
-  .option-label.selected { background: #fff7ed; border-color: #C96442; color: #7c2d12; }
-  .option-label input { accent-color: #C96442; flex-shrink: 0; }
+  .option-label.selected { background: #fff7ed; border-color: #CC7857; color: #7c2d12; }
+  .option-label input { accent-color: #CC7857; flex-shrink: 0; }
   .skip-note { font-size: 11px; color: #9ca3af; margin-top: 10px; }
 
   .nav-row {
@@ -176,18 +176,18 @@
   }
   .nav-dots { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; justify-content: center; }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: #e5e7eb; }
-  .dot-active { background: #C96442; }
+  .dot-active { background: #CC7857; }
   .dot-answered { background: #86efac; }
 
   .nav-btn {
     padding: 6px 14px; border-radius: 5px; border: none;
-    background: #C96442; color: white; cursor: pointer; font-size: 13px; font-weight: 500;
+    background: #CC7857; color: white; cursor: pointer; font-size: 13px; font-weight: 500;
     white-space: nowrap; transition: background 0.1s, opacity 0.1s;
   }
-  .nav-btn:hover:not(:disabled) { background: #a84f32; }
+  .nav-btn:hover:not(:disabled) { background: #B8634A; }
   .nav-btn:disabled { background: #d1d5db; color: #9ca3af; cursor: not-allowed; }
-  .nav-btn.primary { background: #C96442; color: white; }
-  .nav-btn.primary:hover:not(:disabled) { background: #a84f32; }
+  .nav-btn.primary { background: #CC7857; color: white; }
+  .nav-btn.primary:hover:not(:disabled) { background: #B8634A; }
 
   .naming-body { padding: 20px 16px; }
   .naming-hint { font-size: 13px; color: #6b7280; margin-bottom: 14px; line-height: 1.5; }
@@ -195,6 +195,6 @@
     width: 100%; padding: 9px 12px; font-size: 14px;
     border: 1px solid #d1d5db; border-radius: 6px; outline: none;
   }
-  .name-input:focus { border-color: #C96442; box-shadow: 0 0 0 2px rgba(201,100,66,0.15); }
+  .name-input:focus { border-color: #CC7857; box-shadow: 0 0 0 2px rgba(204,120,87,0.15); }
   .answered-count { font-size: 11px; color: #9ca3af; margin-top: 8px; }
 </style>
