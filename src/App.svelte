@@ -458,6 +458,7 @@
   });
 
   let axisInfo = $derived(
+    !store.tutorialMode &&
     store.activeTab === 'survey' &&
     store.surveyXAxis && store.surveyYAxis && store.surveyXAxis !== store.surveyYAxis
       ? { x: INDEXES.find(i => i.id === store.surveyXAxis), y: INDEXES.find(i => i.id === store.surveyYAxis) }
