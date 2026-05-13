@@ -93,39 +93,77 @@
         store.layers = [...store.layers, makeLayer('voter', pts, label, { kind: 'survey' }, layerColor(store.layers.length))];
       }
 
-    } else if (tab === 'custom') {
-      if (!store.uploadedFile) { alert('Please upload a JSON file first.'); return; }
-      const raw = store.uploadedFile.data;
-      const filename = store.uploadedFile.name;
-      const newLayers = [];
-      const isValidPt = p => p && Number.isFinite(p.x) && Number.isFinite(p.y);
-
-      if (raw && Array.isArray(raw.layers)) {
-        raw.layers.forEach((l, idx) => {
-          if (l.type !== 'voter' && l.type !== 'candidate') return;
-          const pts = (l.points ?? []).filter(isValidPt);
-          if (!pts.length) return;
-          newLayers.push({
-            id: crypto.randomUUID(),
-            label: l.label ?? formatLabel({ kind: 'custom', filename }),
-            type: l.type,
-            points: pts,
-            visible: l.visible ?? true,
-            color: l.color ?? layerColor(store.layers.length + idx),
-            params: l.params ?? null,
-          });
-        });
-      } else if (Array.isArray(raw)) {
-        const voters = raw.filter(p => p.type === 'voter' && isValidPt(p)).map(({ type, ...rest }) => rest);
-        const candidates = raw.filter(p => p.type === 'candidate' && isValidPt(p)).map(({ type, ...rest }) => rest);
-        if (voters.length) newLayers.push(makeLayer('voter', voters, formatLabel({ kind: 'custom', filename }), null, layerColor(store.layers.length)));
-        if (candidates.length) newLayers.push(makeLayer('candidate', candidates, formatLabel({ kind: 'custom', filename })));
-      }
-      if (!newLayers.length) { alert('No valid points found in JSON.'); return; }
-      store.layers = [...store.layers, ...newLayers];
     }
 
     store.electionResult = null;
+  }
+
+  function importLayersFromJson(raw, filename) {
+    const fileKind = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw.kind : null;
+    const currentTab = store.activeTab;
+    if (fileKind === 'synthetic' && currentTab === 'survey') {
+      alert('This file is synthetic data, but you\'re on the Survey tab. Switch to the Synthetic tab before importing this file.');
+      return;
+    }
+    if (fileKind === 'survey' && currentTab === 'synthetic') {
+      alert('This file is survey data, but you\'re on the Synthetic tab. Switch to the Survey tab before importing this file.');
+      return;
+    }
+
+    const newLayers = [];
+    const isValidPt = p => p && Number.isFinite(p.x) && Number.isFinite(p.y);
+    if (raw && Array.isArray(raw.layers)) {
+      raw.layers.forEach((l, idx) => {
+        if (l.type !== 'voter' && l.type !== 'candidate') return;
+        const pts = (l.points ?? []).filter(isValidPt);
+        if (!pts.length) return;
+        newLayers.push({
+          id: crypto.randomUUID(),
+          label: l.label ?? formatLabel({ kind: 'custom', filename }),
+          type: l.type,
+          points: pts,
+          visible: l.visible ?? true,
+          color: l.color ?? layerColor(store.layers.length + idx),
+          params: l.params ?? null,
+        });
+      });
+    } else if (Array.isArray(raw)) {
+      const voters = raw.filter(p => p.type === 'voter' && isValidPt(p)).map(({ type, ...rest }) => rest);
+      const candidates = raw.filter(p => p.type === 'candidate' && isValidPt(p)).map(({ type, ...rest }) => rest);
+      if (voters.length) newLayers.push(makeLayer('voter', voters, formatLabel({ kind: 'custom', filename }), null, layerColor(store.layers.length)));
+      if (candidates.length) newLayers.push(makeLayer('candidate', candidates, formatLabel({ kind: 'custom', filename })));
+    } else {
+      alert('Unrecognized JSON shape — expected an export object or an array of {x, y, type} points.');
+      return;
+    }
+    if (!newLayers.length) { alert('No valid points found in JSON.'); return; }
+
+    if (fileKind === 'survey' && raw.survey) {
+      if (raw.survey.xAxis) store.surveyXAxis = raw.survey.xAxis;
+      if (raw.survey.yAxis) store.surveyYAxis = raw.survey.yAxis;
+      if (raw.survey.rankings) store.surveyRankings = raw.survey.rankings;
+    }
+
+    store.layers = [...store.layers, ...newLayers];
+    store.electionResult = null;
+  }
+
+  let importInput;
+  function triggerImport() { importInput?.click(); }
+  function handleImportChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        importLayersFromJson(data, file.name);
+      } catch {
+        alert('Invalid JSON file.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   }
 
   // --- Candidate generation (survey tab) ---
@@ -246,13 +284,11 @@
   }
 
   function exportData() {
+    const kind = store.activeTab === 'survey' ? 'survey' : 'synthetic';
     const payload = {
       version: 2,
+      kind,
       exportedAt: new Date().toISOString(),
-      activeTab: store.activeTab,
-      surveyXAxis: store.surveyXAxis,
-      surveyYAxis: store.surveyYAxis,
-      surveyRankings: store.surveyRankings,
       layers: store.layers.map(l => ({
         label: l.label,
         type: l.type,
@@ -262,10 +298,18 @@
         points: l.points,
       })),
     };
+    if (kind === 'survey') {
+      payload.survey = {
+        source: 'Fall 2014 Statewide IL Poll',
+        xAxis: store.surveyXAxis,
+        yAxis: store.surveyYAxis,
+        rankings: store.surveyRankings,
+      };
+    }
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'saved_data.json';
+    a.download = `${kind}_data.json`;
     a.click();
     URL.revokeObjectURL(a.href);
   }
@@ -503,7 +547,14 @@
     </div>
     <div class="toolbar-right" style:visibility={store.tutorialMode ? 'hidden' : 'visible'}>
       <button class="toolbar-btn" onclick={clearAll}>clear</button>
+      <button class="toolbar-btn" onclick={triggerImport} title="Import a previously exported JSON file">import</button>
       <button class="toolbar-btn" onclick={exportData}>export</button>
+      <input
+        bind:this={importInput}
+        type="file" accept=".json"
+        style="display:none"
+        onchange={handleImportChange}
+      >
     </div>
   </div>
 
