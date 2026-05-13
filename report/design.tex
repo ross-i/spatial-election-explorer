@@ -1,0 +1,114 @@
+
+\subsection{Tutorial}%
+\label{sub:Tutorial}
+The tutorial serves to orient the user, introduce the voting rules,
+and give the user a sense of how to interact with the application.
+
+It begins by defining the spatial model, contextualizing the axes
+as representing a policy or ideology space, and emphasizing the
+key assumption: only the distance between voters and candidates matters
+in determining how voters will fill out their ballots.
+
+Next, it introduces the tool and the primary ways of using it
+via a series of examples that introduce Plurality, Borda, IRV, and STV.
+At each step, the tutorial shows an example plot
+and asks the user to make a prediction of which candidate will win.
+
+The plurality example demonstrates the well-known "spoiler effect",
+in which a majority bloc of voters is shut out of representation
+because they split their votes across multiple candidates,
+while the minority bloc is unified in their support of a single candidate.
+
+The Borda example explains how candidates are scored,
+then demonstrates its tendency to elect centrist "consensus" candidates.
+
+The IRV example shows how runoff voting can avoid the spoiler effect:
+the plot is set up the same as in the plurality example,
+but, in this case, one of the candidates supported by the majority bloc
+wins the election.
+
+Finally, the multi-winner example contrasts bloc plurality with STV.
+It shows two clusters of voters, one slightly larger than the other,
+with two candidates per voter cluster.
+In bloc plurality, the larger cluster can sweep the election,
+securing both seats on the committee, shutting out the other cluster entirely.
+However, in STV, each cluster gets one seat on the committee---a more proportional outcome.
+
+\subsection{Input}%
+\label{sub:Input}
+On the plot, voters are blue dots, and candidates are yellow stars.
+There are four primary methods for placing voters and candidates on the plot.
+\begin{itemize}
+  \item \textbf{Manual Input.}
+    The user can select to add a candidate or a voter,
+    then click anywhere in the plot to add a point at that location.
+
+  \item \textbf{Synthetic Sampling.}
+    In the sidebar, the user can choose from any of the available distributions.
+    They can set the distribution center by dragging it on the plot,
+    or specifying the desired coordinate position in an input box.
+    They can set distribution parameters with sliders or by entering
+    the desired value in an input box.
+    Then, they can set whether to sample voters or candidates,
+    and set the number of points to be sampled.
+    Finally, clicking "add data" adds these points to the plot.
+
+    By stacking sets of samples drawn from different distributions,
+    the user can easily create multiple clusters of voters or candidates.
+
+    As in \cite{elkind}, the supported distributions are
+    the Gaussian, the Uniform Rectangle, and the Uniform Disc.
+
+  \item \textbf{Survey Data.}
+    Upon selecting the "Survey" tab in the sidebar,
+    the user can select two "Ideology" axes or political issues
+    to serve as the axes of the plot.
+    Then, they can sample voters from polling data.
+
+    \item \textbf{Data Upload.}
+    If a user has exported a JSON file of the points from a previously-generated plot,
+    they may upload that data.
+\end{itemize}
+
+\subsection{Plot Management}%
+\label{sub:Plot Management}
+Every point manually added and every distribution sampled from
+appears as a separate line item in the "Data Points" section of the sidebar.
+The line describes the parameters that created it.
+For every distribution line, the following interactions are available:
+\begin{itemize}
+  \item \textbf{Edit.}
+    Highlights the distribution and reveals its settings;
+    any of the settings (include type, count, position, and parameters)
+    can be changed, and when the user clicks "update",
+    the points are resampled.
+    The user can click "cancel" at any point in this interaction
+    if they want to keep the old settings.
+  \item \textbf{Delete.}
+    Removes this distribution.
+  \item \textbf{Hide.}
+    Hides this distribution; it is temporarily disabled
+    for any election runs, but stays listed in the sidebar
+    to be easily re-enabled later.
+\end{itemize}
+For any line item representing a manually-placed candidate or voter,
+only the Delete and Hide options are available.
+
+\subsection{Running Elections}%
+\label{sub:Running Elections}
+At the bottom of the sidebar, the user can choose their desired voting method,
+select the number of winners, and run the election.
+Running the election updates the plot,
+making the winning candidates visually distinct from the others.
+
+
+\subsection{Survey Data}%
+\label{sub:Survey Data}
+
+\subsection{Implementation}%
+\label{sub:Implementation}
+The application front end is built with Svelte and D3 in JS,
+with Vite as the server.
+The election algorithms are implemented in Python and
+compiled to Web Assembly via Pyodide so that they can be run in browser.
+

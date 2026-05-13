@@ -16,3 +16,4 @@ FIX.md
 __pycache__
 
 .claude/
+*.texbuild/

@@ -1,0 +1,49 @@
+
+There a number of natural ways to improve the application or expand its scope.
+
+\textbf{More Voting Rules.}
+Elkind et al. \cite{elkind} also examine
+Chamberlin-Courant (CC) and Monroe,
+multi-winner voting rules noted for their proportionality properties.
+These or any of the many methods proposed in the rich social choice
+literature could be worth inclusion.
+
+% \textbf{Other Distributions.}
+
+
+\textbf{Scaling to more voters and candidates.}
+To handle more voters and candidates, two sets of changes are necessary:
+\begin{enumerate}
+  \item
+The Python back end should be replaced with higher-performance
+code written in Rust or C++,
+which would significantly reduce run times for heavy loads.
+
+\item
+  As the number of voters and candidates grows large,
+  the visual representation must adapt.
+  Rather than plotting all points,
+  the application could, like \cite{elkind},
+  compute a fine 2D histogram,
+  encoding frequency as color intensity.
+  Further, methods for choosing representative samples from the dataset,
+  or for estimating and visualizing density,
+  should be explored.
+
+  Additionally we could swap out D3
+  for a higher-performance visualization library
+  that supports the WebGL API,
+  such as Apache ECharts, deck.gl, or SciChart.js.
+
+\end{enumerate}
+
+\textbf{Representing Uncertainty in Survey Data.}
+For simplicity, the current implementation of the survey data
+plots all survey respondents. It might make more sense to sample
+from the distribution, taking into account (and perhaps visually representing)
+the uncertainty inherent in the survey data.
+
+\textbf{More Survey Data.}
+As proof of concept, we have included a single source of survey data.
+The application could benefit from more options and more data sources.
+
