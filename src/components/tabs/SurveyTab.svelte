@@ -32,11 +32,10 @@
   }
 
   let dragging = $state(null);
-  let listEls = {}; // indexId -> ul element
 
   function onDragStart(e, indexId, col) {
-    dragging = { indexId, col };
-    // Required for Firefox to actually start the drag
+    const ul = e.currentTarget.closest('ul');
+    dragging = { indexId, col, ul };
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'move';
       try { e.dataTransfer.setData('text/plain', col); } catch {}
@@ -45,8 +44,7 @@
 
   function onDragOver(e) { e.preventDefault(); }
 
-  function commitReorder(indexId, clientY) {
-    const ul = listEls[indexId];
+  function commitReorder(ul, indexId, clientY) {
     if (!ul) return;
     const order = [...store.surveyRankings[indexId]];
     const from = order.indexOf(dragging.col);
@@ -65,13 +63,13 @@
   }
 
   function onDragEnd(e) {
-    if (dragging) commitReorder(dragging.indexId, e.clientY);
+    if (dragging) commitReorder(dragging.ul, dragging.indexId, e.clientY);
     dragging = null;
   }
 
   function onListDrop(e, indexId) {
     e.preventDefault();
-    if (dragging && dragging.indexId === indexId) commitReorder(indexId, e.clientY);
+    if (dragging && dragging.indexId === indexId) commitReorder(e.currentTarget, indexId, e.clientY);
     dragging = null;
   }
 
@@ -131,7 +129,6 @@
         <div class="rank-hint">drag to re-rank — top = most important to voters</div>
         <ul
           class="rank-list"
-          bind:this={listEls[idx.id]}
           ondragover={onDragOver}
           ondrop={(e) => onListDrop(e, idx.id)}
         >
@@ -183,7 +180,6 @@
         <div class="rank-hint">drag to re-rank — top = most important to voters</div>
         <ul
           class="rank-list"
-          bind:this={listEls[idx.id]}
           ondragover={onDragOver}
           ondrop={(e) => onListDrop(e, idx.id)}
         >
