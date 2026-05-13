@@ -96,11 +96,31 @@
     } else if (tab === 'custom') {
       if (!store.uploadedFile) { alert('Please upload a JSON file first.'); return; }
       const raw = store.uploadedFile.data;
-      const voters = raw.filter(p => p.type === 'voter').map(({ x, y }) => ({ x, y }));
-      const candidates = raw.filter(p => p.type === 'candidate').map(({ x, y }) => ({ x, y }));
+      const filename = store.uploadedFile.name;
       const newLayers = [];
-      if (voters.length) newLayers.push(makeLayer('voter', voters, formatLabel({ kind: 'custom', filename: store.uploadedFile.name }), null, layerColor(store.layers.length)));
-      if (candidates.length) newLayers.push(makeLayer('candidate', candidates, formatLabel({ kind: 'custom', filename: store.uploadedFile.name })));
+      const isValidPt = p => p && Number.isFinite(p.x) && Number.isFinite(p.y);
+
+      if (raw && Array.isArray(raw.layers)) {
+        raw.layers.forEach((l, idx) => {
+          if (l.type !== 'voter' && l.type !== 'candidate') return;
+          const pts = (l.points ?? []).filter(isValidPt);
+          if (!pts.length) return;
+          newLayers.push({
+            id: crypto.randomUUID(),
+            label: l.label ?? formatLabel({ kind: 'custom', filename }),
+            type: l.type,
+            points: pts,
+            visible: l.visible ?? true,
+            color: l.color ?? layerColor(store.layers.length + idx),
+            params: l.params ?? null,
+          });
+        });
+      } else if (Array.isArray(raw)) {
+        const voters = raw.filter(p => p.type === 'voter' && isValidPt(p)).map(({ type, ...rest }) => rest);
+        const candidates = raw.filter(p => p.type === 'candidate' && isValidPt(p)).map(({ type, ...rest }) => rest);
+        if (voters.length) newLayers.push(makeLayer('voter', voters, formatLabel({ kind: 'custom', filename }), null, layerColor(store.layers.length)));
+        if (candidates.length) newLayers.push(makeLayer('candidate', candidates, formatLabel({ kind: 'custom', filename })));
+      }
       if (!newLayers.length) { alert('No valid points found in JSON.'); return; }
       store.layers = [...store.layers, ...newLayers];
     }
@@ -179,9 +199,18 @@
     const hasCandidates = bundle.some(l => l.type === 'candidate');
     const hasVoters = bundle.some(l => l.type === 'voter');
     if (!hasCandidates || !hasVoters) { alert('Need both voter and candidate layers to run an election.'); return; }
+    const candidateCount = bundle
+      .filter(l => l.type === 'candidate')
+      .reduce((n, l) => n + l.points.length, 0);
+    const requested = Number(store.numWinners);
+    if (!Number.isFinite(requested) || requested < 1) { alert('Number of winners must be at least 1.'); return; }
+    if (requested > candidateCount) {
+      alert(`Cannot pick ${requested} winners from only ${candidateCount} candidate${candidateCount === 1 ? '' : 's'}.`);
+      return;
+    }
     store.isGenerating = true;
     try {
-      store.electionResult = await run_election(bundle, store.method, Number(store.numWinners));
+      store.electionResult = await run_election(bundle, store.method, requested);
     } finally {
       store.isGenerating = false;
     }
@@ -217,8 +246,23 @@
   }
 
   function exportData() {
-    const flat = store.layers.flatMap(l => l.points.map(p => ({ ...p, type: l.type })));
-    const blob = new Blob([JSON.stringify(flat, null, 2)], { type: 'application/json' });
+    const payload = {
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      activeTab: store.activeTab,
+      surveyXAxis: store.surveyXAxis,
+      surveyYAxis: store.surveyYAxis,
+      surveyRankings: store.surveyRankings,
+      layers: store.layers.map(l => ({
+        label: l.label,
+        type: l.type,
+        color: l.color,
+        params: l.params,
+        visible: l.visible,
+        points: l.points,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'saved_data.json';
@@ -242,7 +286,6 @@
         kind, layerColor(store.layers.length)
       )];
       store.electionResult = null;
-      store.addMode = null;
     }
   }
 
@@ -254,6 +297,42 @@
   function startSelectCenter() {
     store.selectingCenter = true;
     store.addMode = null;
+  }
+
+  function onWindowContextMenu(e) {
+    if (store.addMode || store.selectingCenter) {
+      e.preventDefault();
+      store.addMode = null;
+      store.selectingCenter = false;
+    }
+  }
+
+  function isTypingTarget(target) {
+    if (!target) return false;
+    const tag = target.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
+  }
+
+  function onWindowKeydown(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (isTypingTarget(e.target)) return;
+    if (store.tutorialMode) return;
+    const k = e.key.toLowerCase();
+    if (k === 'v') {
+      if (store.activeTab === 'survey') return;
+      e.preventDefault();
+      toggleAddMode('voter');
+    } else if (k === 'c') {
+      if (store.activeTab === 'survey' && !(store.surveyXAxis && store.surveyYAxis && store.surveyXAxis !== store.surveyYAxis)) return;
+      e.preventDefault();
+      toggleAddMode('candidate');
+    } else if (k === 'escape') {
+      if (store.addMode || store.selectingCenter) {
+        e.preventDefault();
+        store.addMode = null;
+        store.selectingCenter = false;
+      }
+    }
   }
 
   function deleteLayer(id) {
@@ -392,6 +471,8 @@
   }
 </script>
 
+<svelte:window oncontextmenu={onWindowContextMenu} onkeydown={onWindowKeydown} />
+
 <div class="app">
   <div class="toolbar">
     <div class="toolbar-left" style:visibility={store.tutorialMode ? 'hidden' : 'visible'}>
@@ -399,15 +480,17 @@
         class="toolbar-btn"
         class:active={store.addMode === 'voter'}
         disabled={store.activeTab === 'survey'}
+        title="Add voter (press v)"
         onclick={() => toggleAddMode('voter')}>
-        +voter
+        +voter <span class="kbd">v</span>
       </button>
       <button
         class="toolbar-btn"
         class:active={store.addMode === 'candidate'}
         disabled={store.activeTab === 'survey' && !(store.surveyXAxis && store.surveyYAxis && store.surveyXAxis !== store.surveyYAxis)}
+        title="Add candidate (press c)"
         onclick={() => toggleAddMode('candidate')}>
-        +candidate
+        +candidate <span class="kbd">c</span>
       </button>
     </div>
     <div class="toolbar-center">
@@ -426,6 +509,15 @@
 
   <div class="main">
     <div class="plot-area">
+      {#if store.addMode}
+        <div class="mode-bubble" role="status">
+          <span class="mode-dot"></span>
+          <span>
+            <strong>Add {store.addMode} mode</strong> — click on the plot to drop a {store.addMode}.
+            <span class="mode-hint">Right-click (or press Esc) to exit.</span>
+          </span>
+        </div>
+      {/if}
       <PlotCanvas
         layers={activeLayers}
         electionResult={activeElectionResult}
@@ -558,9 +650,41 @@
   .toolbar-btn:hover:not(:disabled) { background: rgba(45,43,39,0.07); }
   .toolbar-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .toolbar-btn.active { background: rgba(201,100,66,0.12); border-color: #C96442; color: #C96442; }
+  .kbd {
+    display: inline-block; margin-left: 4px; padding: 0 5px;
+    border: 1px solid #C0BAB2; border-bottom-width: 2px; border-radius: 3px;
+    background: #FAF7F2; color: #6B6560; font-size: 10px; font-weight: 600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height: 1.4;
+  }
+  .toolbar-btn.active .kbd { border-color: #C96442; color: #C96442; background: #fff; }
 
   .main { display: flex; flex: 1; overflow: hidden; }
-  .plot-area { flex: 1; overflow: hidden; border: 1px solid #D5CFC6; border-right: none; background: #F5F0E8; }
+  .plot-area { position: relative; flex: 1; overflow: hidden; border: 1px solid #D5CFC6; border-right: none; background: #F5F0E8; }
+  .mode-bubble {
+    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 14px; border-radius: 999px;
+    background: #2D2B27; color: #F5F0E8; font-size: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    pointer-events: none; z-index: 10;
+    animation: bubble-in 0.18s ease-out;
+  }
+  .mode-bubble strong { color: #fff; font-weight: 600; text-transform: capitalize; }
+  .mode-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #C96442;
+    box-shadow: 0 0 0 0 rgba(201,100,66,0.6);
+    animation: bubble-pulse 1.4s ease-out infinite;
+  }
+  .mode-hint { opacity: 0.7; margin-left: 4px; }
+  @keyframes bubble-in {
+    from { opacity: 0; transform: translate(-50%, -6px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+  }
+  @keyframes bubble-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(201,100,66,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(201,100,66,0); }
+    100% { box-shadow: 0 0 0 0 rgba(201,100,66,0); }
+  }
 
   .resize-handle {
     width: 5px;
