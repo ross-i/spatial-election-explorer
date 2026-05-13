@@ -3,9 +3,7 @@
 \usepackage{csquotes}
 \MakeOuterQuote{"}
 
-\usepackage[backend=biber, bibstyle=ieee, url=false,
-            giveninits=true, doi=false, maxbibnames=15]{biblatex}
-\addbibresource{references.bib}
+
 
 \usepackage{graphicx}
 \usepackage{amsmath}
@@ -36,6 +34,9 @@
     urlcolor=.,
 }
 
+\usepackage[backend=biber, bibstyle=ieee, url=false,
+            giveninits=true, doi=false, maxbibnames=15]{biblatex}
+\addbibresource{references.bib}
 
 \title{\LARGE \textbf{Spatial Election Explorer (SEE)}}
 \author{
@@ -57,28 +58,24 @@
   \label{fig:teaser}
 \end{figure*}
 
-\begin{centering}
-  \textbf{Abstract.}
-  \input{abstract.tex}
-\end{centering}
+\input{0-abstract.tex}
 
 \section{Introduction}%
 \label{sec:Introduction}
-\input{intro.tex}
+\input{1-intro.tex}
 
 \section{Preliminaries}%
 \label{sec:Preliminaries}
-\input{prelim.tex}
+\input{2-prelim.tex}
 
 \section{Application Design}%
 \label{sec:Design and Implementation}
-\input{design.tex}
+\input{3-design.tex}
 
 \section{Future Directions}%
 \label{sec:Future Directions}
-\input{future-dir.tex}
+\input{4-future-dir.tex}
 
-\newpage
 \printbibliography
 
 \end{document}

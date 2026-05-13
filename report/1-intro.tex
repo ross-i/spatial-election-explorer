@@ -1,5 +1,5 @@
 
-Imagine a scenario in which some agents have each ranked a set of alternatives
+Imagine a scenario in which the members of a group have each ranked a set of alternatives
 from most preferred to least preferred.
 How should this set of rankings be consolidated to a single ranking
 or to a set of winning alternatives that fairly represents the entire group's preferences?
@@ -12,11 +12,13 @@ a committee choosing what candidates to shortlist or hire; or
 a panel of judges who have ranked competitors in ice skating or ballroom dance.
 
 There are many algorithms (called \textit{voting rules}) for aggregating these group preferences:
-how should the agents choose which to use?
-Deliberation among the agents about this decision might rely on the details of the algorithms,
+how should the group choose which to use?
+Deliberation among the group members about this decision
+might rely on the details of the algorithms,
 or on appeals to axiomatic properties that such algorithms may or may not satisfy.
-They might say that STV is "more proportional" than Bloc Plurality for electing committees;
-that IRV, unlike Plurality, "avoids the spoiler effect";
+They might say that Single Transferable Vote (STV) is "more proportional"
+than Bloc Plurality for electing committees;
+that Instant-Runoff Voting (IRV), unlike Plurality, "avoids the spoiler effect";
 or that Plurality exhibits a "center squeeze" effect.
 However, non-experts may find such arguments to be overly abstract.
 Methods to visualize the behavior of voting rules can bridge this communication gap
@@ -42,10 +44,10 @@ Further, it has a natural interpretation:
 the position of voters and candidates might represent their
 positions on two political issues or on two ideological axes.
 
-% TODO: 1. overly wordy // 2. use active voice
 In the Spatial Election Explorer (SEE),
-voters and candidates can be placed on the plane by hand
-or by sampling from the available distributions.
+voters and candidates can be placed on the plane by hand,
+by sampling from the available distributions,
+or by mapping survey data to positions on ideological axes.
 Their positions determine a unique collection of rankings,
 which can be used as input to any of various voting rules.
 The winners are displayed, providing the user a visual description
@@ -53,19 +55,20 @@ of how the distribution of winners differs according to the choice of voting rul
 
 \textbf{Audience.}
 The intended audience for our application is threefold:
-\begin{itemize}[nosep]  %[topsep=0.2em, itemsep=0.055555em]
+\begin{itemize}
 \item[1.] Computational social choice (COMSOC) researchers can experiment with various voting rules,
 testing and refining the intuition they already have for those methods.
 Visualization may also suggest patterns of behavior in these voting rules that can
 be axiomatized and studied formally.
+%
 \item[2.] Students studying social choice theory can use the tool to develop intuition
 for the behavior of voting rules that supplements their learning in the
-classroom. More aspirationally, perhaps they might be inspired to pursue
-research in the area.
+classroom.
+%
 \item[3.] Policymakers and policy advocates who are considering the implementation of
-ranked choice voting and wondering what voting rule to use might find value in
-the tool as they develop intuition for the behavior of and tradeoffs between
-the rules under consideration.
+ranked choice voting and wondering what voting rule to use can use
+the tool as they develop intuition about how outcomes vary across voting rules.
+
 \end{itemize}
 
 \textbf{Related Work.}
