@@ -13,10 +13,9 @@ a panel of judges who have ranked competitors in ice skating or ballroom dance.
 
 There are many algorithms (called \textit{voting rules}) for aggregating these group preferences:
 how should the group choose which to use?
-Deliberation among the group members about this decision
-might rely on the details of the algorithms,
-or on appeals to axiomatic properties that such algorithms may or may not satisfy.
-They might say that Single Transferable Vote (STV) is "more proportional"
+Deliberation about this decision might involve invoking the details of the algorithms,
+or making appeals to axiomatic properties that such algorithms may or may not satisfy.
+Some group member might say that Single Transferable Vote (STV) is "more proportional"
 than Bloc Plurality for electing committees;
 that Instant-Runoff Voting (IRV), unlike Plurality, "avoids the spoiler effect";
 or that Plurality exhibits a "center squeeze" effect.
@@ -24,15 +23,14 @@ However, non-experts may find such arguments to be overly abstract.
 Methods to visualize the behavior of voting rules can bridge this communication gap
 and help voters develop intuition about the differences between algorithms.
 
-The core objective of our project is to employ a previously developed technique
-for visualizing elections as the basis of an interactive election simulator.
+The core objective of our project is to employ an established election visualization technique,
+the two-dimensional spatial model, as the basis of an interactive election simulator.
 Allowing users to build, experiment, and iterate upon their own simulations
 builds intuition in ways that a set of static plots cannot.
 Combining visualization with iterative experimentation
 allows users to both \textit{see} the properties of the various algorithms
 and to learn the conditions under which these properties emerge.
 
-\vspace{ 1em }
 \textbf{Our Methodology.}
 To facilitate visualization, we adopt a two-dimensional spatial model of voters' preferences.
 Voters and candidates are jointly embedded in the Euclidean plane,
@@ -55,7 +53,7 @@ of how the distribution of winners differs according to the choice of voting rul
 
 \textbf{Audience.}
 The intended audience for our application is threefold:
-\begin{itemize}
+\begin{itemize}[itemsep=0.2em]
 \item[1.] Computational social choice (COMSOC) researchers can experiment with various voting rules,
 testing and refining the intuition they already have for those methods.
 Visualization may also suggest patterns of behavior in these voting rules that can
@@ -65,10 +63,8 @@ be axiomatized and studied formally.
 for the behavior of voting rules that supplements their learning in the
 classroom.
 %
-\item[3.] Policymakers and policy advocates who are considering the implementation of
-ranked choice voting and wondering what voting rule to use can use
-the tool as they develop intuition about how outcomes vary across voting rules.
-
+\item[3.] Policymakers and policy advocates considering ranked-choice voting
+   can use SEE to compare voting rules and build intuition about how outcomes vary.
 \end{itemize}
 
 \textbf{Related Work.}
@@ -76,7 +72,14 @@ Our work is primarily inspired by Elkind et al. \cite{elkind},
 whose experiments generated plots capturing the distribution of winning candidates
 under various multi-winner voting rules
 and across varying underlying distributions of voters and candidates.
-%
-Szufa et al. \cite{dap} created visual "maps" of preference profiles
+SEE extends this approach by making it interactive and incorporating real-world survey data.
+
+Another visualization approach is presented in
+Szufa et al. \cite{dap}, who created visual "maps" of preference profiles
 by computing swap distances between ballots and applying the
 multidimensional scaling (MDS) algorithm.
+Extending this method to an interactive application would require
+some external method for generating election data;
+the spatial model, on the other hand,
+conveniently consolidates the generation and visualization steps
+because the position of points \textit{determines} the voters' rankings.

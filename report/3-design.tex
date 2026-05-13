@@ -1,3 +1,6 @@
+SEE provides an interactive plot alongside a sidebar that guides users from first contact---via
+a tutorial---through placing voters and candidates, running elections under various voting rules,
+and optionally grounding the simulation in real political survey data.
 
 \subsection{Tutorial}%
 \label{sub:Tutorial}
@@ -62,8 +65,9 @@ There are four primary methods for placing voters and candidates on the plot.
     Upon selecting the "Survey" tab in the sidebar,
     the user can select two "Ideology" axes or political issues
     to serve as the axes of the plot.
-    Then, they can view the distribution of political opinion survey respondents across
-    these aces, and model candidates based on the survey questions.
+    Then, they can view the distribution of political opinion survey respondents across these axes
+    % TODO: clarify this interaction
+    and model candidates based on the survey questions.
     Additionally, users can rank the survey questions used to inform each axis to see
     how election outcomes differ when voter priorities change.
 
@@ -83,7 +87,7 @@ For every distribution line, the following interactions are available:
 \begin{itemize}
   \item \textbf{Edit.}
     Highlights the distribution and reveals its settings;
-    any of the settings (include type, count, position, and parameters)
+    any of the settings (including type, count, position, and parameters)
     can be changed, and when the user clicks "update",
     the points are resampled.
     The user can click "cancel" at any point in this interaction
@@ -128,11 +132,12 @@ we computed the conditional probability that a respondent holding a conservative
 (or liberal) position on one question also held a consistent position on the
 other. A question was included only if all pairwise conditional probabilities
 exceeded 50\% in both directions. All question pairs within the final three
-topics passed this threshold (ranging from 51–79\%); four candidate questions
-were excluded for failing it. The questions in the survey were originally on
-4-point Likert (strongly favor to strongly oppose), 3-point, and binary scales.
-To normalize, we recode all scales to a 0-1 range before scoring. Question
-weights are assigned by linear decay based on the user's ranking---the
+topics passed this threshold (ranging from 51–79\%); four questions were excluded.
+The questions in the survey were originally on
+4-point Likert scale (strongly favor to strongly oppose), 3-point scale, and binary scale.
+To normalize, we recode all scales to a 0-1 range before scoring.
+% TODO: add details explaining how this actually works
+Question weights are assigned by linear decay based on the user's ranking---the
 top-ranked question receives the most weight, with each subsequent question
 receiving proportionally less.
 

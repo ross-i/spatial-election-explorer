@@ -22,7 +22,8 @@ and returns a set of one or more winning alternatives.
 The candidate with the most first-place votes wins.
 
 \textbf{Borda.}
-Each candidate's score is the sum of the number of candidates ranked below them across all ballots.
+Each candidate's score is
+the total count of candidates ranked below them, summed across all ballots.
 The candidate with the highest score wins.
 
 \textbf{Instant Runoff Voting (IRV).}
@@ -56,14 +57,14 @@ these rules elect a committee of size $k$.
   Iterate the following process:
   if any candidate's score $s$ is greater than
   $ q = \lfloor \frac{n}{k+1} \rfloor $, elect them,
-  reweight their supporters by a factor of $\frac{s-q}{s}$,
+  reweight each supporting voter's ballot by a factor of $\frac{s-q}{s}$,
   and transfer their support to their next-favorite remaining candidate.
   If no candidate is above the threshold, eliminate the candidate
   with the lowest score and redistribute their support.
 
   Only one candidate can be elected at a time:
   if multiple candidates are simultaneously above threshold,
-  the candidate with greater score is elected
+  the candidate with the greater score is elected
   and their support is redistributed before any other candidates are elected.
 
 \end{itemize}
