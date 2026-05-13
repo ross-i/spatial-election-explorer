@@ -250,18 +250,34 @@
     }
 
     if (showCandidates) {
+      const winnerIds = new Set();
       if (electionResult) {
-        const resultPts = electionResult.flatMap(l => l.points);
-        resultPts.forEach(p => {
+        for (const l of electionResult) {
+          for (const p of l.points) if (p.winner) winnerIds.add(p.id);
+        }
+      }
+      for (const layer of layers.filter(l => l.visible && l.type === 'candidate')) {
+        const lit = highlightedLayerId && layer.id === highlightedLayerId;
+        const fill = layer.color ?? '#C8983A';
+        const stroke = d3.color(fill)?.darker(0.6).formatHex() ?? '#8E6A22';
+        layer.points.forEach((p, i) => {
+          const isWinner = winnerIds.has(`${layer.id}-${i}`);
           const cx = xScale(p.x), cy = yScale(p.y);
-          const fill = '#C8983A';
-          const sz = p.winner ? 14 : 10;
+          const sz = isWinner ? 14 : (lit ? 14 : 10);
           g.append('path')
+            .datum(p)
             .attr('d', starPath(cx, cy, sz))
             .attr('fill', fill)
-            .attr('stroke', '#8E6A22')
-            .attr('stroke-width', 0.5);
-          if (p.winner) {
+            .attr('stroke', stroke)
+            .attr('stroke-width', (lit || isWinner) ? 1 : 0.5)
+            .attr('opacity', 1)
+            .style('cursor', p._profile ? 'pointer' : 'default')
+            .on('click', function(event, d) {
+              if (!d._profile || !onPointClick) return;
+              event.stopPropagation();
+              onPointClick(d._profile);
+            });
+          if (isWinner) {
             g.append('text')
               .attr('x', cx).attr('y', cy - 18)
               .attr('text-anchor', 'middle')
@@ -269,30 +285,10 @@
               .attr('font-family', "Georgia, 'Times New Roman', serif")
               .attr('font-style', 'italic')
               .attr('fill', '#C96442')
+              .attr('pointer-events', 'none')
               .text('winner');
           }
         });
-      } else {
-        for (const layer of layers.filter(l => l.visible && l.type === 'candidate')) {
-          const lit = highlightedLayerId && layer.id === highlightedLayerId;
-          const fill = layer.color ?? '#C8983A';
-          const stroke = d3.color(fill)?.darker(0.6).formatHex() ?? '#8E6A22';
-          layer.points.forEach(p => {
-            g.append('path')
-              .datum(p)
-              .attr('d', starPath(xScale(p.x), yScale(p.y), lit ? 14 : 10))
-              .attr('fill', fill)
-              .attr('stroke', stroke)
-              .attr('stroke-width', lit ? 1 : 0.5)
-              .attr('opacity', 1)
-              .style('cursor', p._profile ? 'pointer' : 'default')
-              .on('click', function(event, d) {
-                if (!d._profile || !onPointClick) return;
-                event.stopPropagation();
-                onPointClick(d._profile);
-              });
-          });
-        }
       }
     }
   }
