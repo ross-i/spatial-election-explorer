@@ -63,11 +63,10 @@ There are four primary methods for placing voters and candidates on the plot.
 
   \item \textbf{Survey Data.}
     Upon selecting the "Survey" tab in the sidebar,
-    the user can select two "Ideology" axes or political issues
-    to serve as the axes of the plot.
+    the user can select two ideology or political issue axes to serve as the axes of the plot.
     Then, they can view the distribution of political opinion survey respondents across these axes
-    % TODO: clarify this interaction
-    and model candidates based on the survey questions.
+    and, by answering the survey questions,
+    can simulate the position of a candidate with specific views.
     Additionally, users can rank the survey questions used to inform each axis to see
     how election outcomes differ when voter priorities change.
 
@@ -125,7 +124,7 @@ government reform, LGBTQ+ rights, abortion rights, gun control laws,
 taxation, government budget, public education, police, and public policy.
 
 We determined three political topics to use for our axes from this survey:
-‘Role of Government’, ‘Social Issues’, and ‘Guns’.
+"Role of Government", "Social Issues", and "Guns".
 Each topic cluster was validated through pairwise cross-tabulation analysis:
 for each pair of questions within a topic,
 we computed the conditional probability that a respondent holding a conservative
@@ -133,9 +132,10 @@ we computed the conditional probability that a respondent holding a conservative
 other. A question was included only if all pairwise conditional probabilities
 exceeded 50\% in both directions. All question pairs within the final three
 topics passed this threshold (ranging from 51–79\%); four questions were excluded.
+
 The questions in the survey were originally on
 4-point Likert scale (strongly favor to strongly oppose), 3-point scale, and binary scale.
-To normalize, we recode all scales to a 0-1 range before scoring.
+To normalize, we recoded all scales to a 0-1 range before scoring.
 % TODO: add details explaining how this actually works
 Question weights are assigned by linear decay based on the user's ranking---the
 top-ranked question receives the most weight, with each subsequent question
