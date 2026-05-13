@@ -72,7 +72,7 @@
       {#if store.isGenerating}
         <span class="spinner"></span>running
       {:else}
-        generate
+        run election
       {/if}
     </button>
   </div>
