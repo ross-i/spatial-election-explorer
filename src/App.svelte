@@ -294,18 +294,42 @@
     const xAxis = store.surveyXAxis;
     const yAxis = store.surveyYAxis;
     const data = store.surveyData;
-    if (!data || !xAxis || !yAxis || xAxis === yAxis) return;
-    const existing = untrack(() => store.layers.find(l => l.params?.kind === 'survey'));
-    if (!existing) return;
+    if (!xAxis || !yAxis || xAxis === yAxis) return;
     const xIndex = INDEXES.find(i => i.id === xAxis);
     const yIndex = INDEXES.find(i => i.id === yAxis);
-    const pts = surveyFromData(data, xIndex, yIndex, rankings ?? defaultRankings());
-    if (!pts.length) return;
-    const label = `Survey: ${xIndex.label} × ${yIndex.label} (${pts.length} respondents)`;
+    const rk = rankings ?? defaultRankings();
+    const xWeights = rankingsToWeights(rk[xIndex.id]);
+    const yWeights = rankingsToWeights(rk[yIndex.id]);
+
+    const surveyLayer = untrack(() => store.layers.find(l => l.params?.kind === 'survey'));
+    const candidateLayers = untrack(() =>
+      store.layers.filter(l => l.type === 'candidate' && l.points.some(p => p._profile))
+    );
+    if (!surveyLayer && !candidateLayers.length) return;
+
+    let newSurveyPts = null;
+    let newSurveyLabel = null;
+    if (data && surveyLayer) {
+      newSurveyPts = surveyFromData(data, xIndex, yIndex, rk);
+      newSurveyLabel = `Survey: ${xIndex.label} × ${yIndex.label} (${newSurveyPts.length} respondents)`;
+    }
+
     untrack(() => {
-      store.layers = store.layers.map(l =>
-        l.id === existing.id ? { ...l, points: pts, label } : l
-      );
+      store.layers = store.layers.map(l => {
+        if (surveyLayer && l.id === surveyLayer.id && newSurveyPts?.length) {
+          return { ...l, points: newSurveyPts, label: newSurveyLabel };
+        }
+        if (l.type === 'candidate' && l.points.some(p => p._profile)) {
+          const points = l.points.map(p => {
+            if (!p._profile) return p;
+            const x = scoreRespondent(p._profile, xIndex, xWeights) ?? 0.5;
+            const y = scoreRespondent(p._profile, yIndex, yWeights) ?? 0.5;
+            return { ...p, x, y };
+          });
+          return { ...l, points };
+        }
+        return l;
+      });
       store.electionResult = null;
     });
   });
