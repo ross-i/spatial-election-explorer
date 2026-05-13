@@ -1,13 +1,12 @@
 <script>
   import { store } from '../store.svelte.js';
+  import { ELECTION_METHOD_IDS, electionMethodLabel } from '../lib/electionRules.js';
   import pencilIcon from '../assets/pencil.svg';
   import eyeIcon from '../assets/eye.svg';
   import eyeOffIcon from '../assets/eye-off.svg';
   import trashIcon from '../assets/trash.svg';
 
   const { onGenerate, onDelete, onToggleVisibility, onStartEdit, onGenerateRandom, onOpenProfiler, onEditCandidate } = $props();
-
-  const METHODS = ['plurality', 'borda', 'IRV', 'bloc_plurality', 'STV'];
 </script>
 
 <div class="data-panel">
@@ -62,8 +61,8 @@
   <div class="generate-row">
     <select bind:value={store.method} class="method-select"
       onchange={() => { store.electionResult = null; }}>
-      {#each METHODS as m}
-        <option value={m}>{m}</option>
+      {#each ELECTION_METHOD_IDS as m}
+        <option value={m}>{electionMethodLabel(m)}</option>
       {/each}
     </select>
     <input type="number" class="winners-input" min="1" bind:value={store.numWinners} title="# winners"
