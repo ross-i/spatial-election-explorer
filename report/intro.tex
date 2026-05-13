@@ -7,17 +7,17 @@ The most familiar setting for this problem is an election,
 where voters rank candidates to choose their representatives,
 but the problem setup applies much more broadly:
 consider
-a set of friends choosing what movie to watch or restaurant to visit;
+a set of friends deciding what movie to watch or restaurant to visit;
 a committee choosing what candidates to shortlist or hire; or
 a panel of judges who have ranked competitors in ice skating or ballroom dance.
 
-There are many algorithms for aggregating these group preferences:
+There are many algorithms (called \textit{voting rules}) for aggregating these group preferences:
 how should the agents choose which to use?
 Deliberation among the agents about this decision might rely on the details of the algorithms,
 or on appeals to axiomatic properties that such algorithms may or may not satisfy.
-They might say that STV is "more proportional" than bloc plurality for electing committees;
-that IRV, unlike plurality, "avoids the spoiler effect";
-or that plurality exhibits a "center squeeze" effect.
+They might say that STV is "more proportional" than Bloc Plurality for electing committees;
+that IRV, unlike Plurality, "avoids the spoiler effect";
+or that Plurality exhibits a "center squeeze" effect.
 However, non-experts may find such arguments to be overly abstract.
 Methods to visualize the behavior of voting rules can bridge this communication gap
 and help voters develop intuition about the differences between algorithms.
@@ -26,38 +26,40 @@ The core objective of our project is to employ a previously developed technique
 for visualizing elections as the basis of an interactive election simulator.
 Allowing users to build, experiment, and iterate upon their own simulations
 builds intuition in ways that a set of static plots cannot.
-Combining visualization and iterative experimentation
-allows users to \textit{see} the properties of the various algorithms
+Combining visualization with iterative experimentation
+allows users to both \textit{see} the properties of the various algorithms
 and to learn the conditions under which these properties emerge.
 
+\vspace{ 1em }
 \textbf{Our Methodology.}
 To facilitate visualization, we adopt a two-dimensional spatial model of voters' preferences.
 Voters and candidates are jointly embedded in the Euclidean plane,
 and voters rank candidates in order of increasing distance.
-Voters thus prefer candidates that are "similar" to themselves.
+Voters therefore prefer candidates that are "similar" to themselves.
 This model is common in both theoretical \cite{spatial}
 and empirical \cite{guide} research in computational social science.
 Further, it has a natural interpretation:
-the position of voters and candidates might, for example, represent their
+the position of voters and candidates might represent their
 positions on two political issues or on two ideological axes.
 
+% TODO: 1. overly wordy // 2. use active voice
 In the Spatial Election Explorer (SEE),
 voters and candidates can be placed on the plane by hand
 or by sampling from the available distributions.
-Their positions determine a unique preference profile,
-which can be used as input to any of various voting methods.
-The winners are displayed, providing the user a visual description how the distribution of winners
-differs according to the choice of voting rule.
+Their positions determine a unique collection of rankings,
+which can be used as input to any of various voting rules.
+The winners are displayed, providing the user a visual description
+of how the distribution of winners differs according to the choice of voting rule.
 
 \textbf{Audience.}
 The intended audience for our application is threefold:
-\begin{itemize}
+\begin{itemize}[nosep]  %[topsep=0.2em, itemsep=0.055555em]
 \item[1.] Computational social choice (COMSOC) researchers can experiment with various voting rules,
 testing and refining the intuition they already have for those methods.
-Visualization may also suggest behavior patterns in these voting rules that can
+Visualization may also suggest patterns of behavior in these voting rules that can
 be axiomatized and studied formally.
 \item[2.] Students studying social choice theory can use the tool to develop intuition
-for the behavior of voting rules that supplements their learnings in the
+for the behavior of voting rules that supplements their learning in the
 classroom. More aspirationally, perhaps they might be inspired to pursue
 research in the area.
 \item[3.] Policymakers and policy advocates who are considering the implementation of

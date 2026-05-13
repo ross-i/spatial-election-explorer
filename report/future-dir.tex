@@ -15,20 +15,15 @@ literature could be worth inclusion.
 To handle more voters and candidates, two sets of changes are necessary:
 \begin{enumerate}
   \item
-The Python back end should be replaced with higher-performance
-code written in Rust or C++,
+The Python back end should be replaced with higher-performance code written in Rust or C++,
 which would significantly reduce run times for heavy loads.
 
 \item
-  As the number of voters and candidates grows large,
-  the visual representation must adapt.
-  Rather than plotting all points,
-  the application could, like \cite{elkind},
-  compute a fine 2D histogram,
-  encoding frequency as color intensity.
-  Further, methods for choosing representative samples from the dataset,
-  or for estimating and visualizing density,
-  should be explored.
+  As the number of voters and candidates grows large, the visual representation must adapt.
+  Rather than plotting all points, the application could, like \cite{elkind},
+  compute a fine 2D histogram, encoding frequency as color intensity.
+  Methods for choosing representative samples from the dataset,
+  or for estimating and visualizing density, should also be explored.
 
   Additionally we could swap out D3
   for a higher-performance visualization library
@@ -45,5 +40,5 @@ the uncertainty inherent in the survey data.
 
 \textbf{More Survey Data.}
 As proof of concept, we have included a single source of survey data.
-The application could benefit from more options and more data sources.
+The application would benefit from more options and more data sources.
 

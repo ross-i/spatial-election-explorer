@@ -2,40 +2,40 @@
 \subsection{Tutorial}%
 \label{sub:Tutorial}
 The tutorial serves to orient the user, introduce the voting rules,
-and give the user a sense of how to interact with the application.
+and set user expectations for the allowable interaction patterns in the application.
 
 It begins by defining the spatial model, contextualizing the axes
 as representing a policy or ideology space, and emphasizing the
 key assumption: only the distance between voters and candidates matters
 in determining how voters will fill out their ballots.
 
-Next, it introduces the tool and the primary ways of using it
+Next, it explains the application and the primary ways of using it
 via a series of examples that introduce Plurality, Borda, IRV, and STV.
 At each step, the tutorial shows an example plot
 and asks the user to make a prediction of which candidate will win.
 
-The plurality example demonstrates the well-known "spoiler effect",
+The Plurality example demonstrates the well-known "spoiler effect",
 in which a majority bloc of voters is shut out of representation
-because they split their votes across multiple candidates,
+because they split their votes across multiple candidates
 while the minority bloc is unified in their support of a single candidate.
 
-The Borda example explains how candidates are scored,
-then demonstrates its tendency to elect centrist "consensus" candidates.
-
 The IRV example shows how runoff voting can avoid the spoiler effect:
-the plot is set up the same as in the plurality example,
-but, in this case, one of the candidates supported by the majority bloc
-wins the election.
+the plot is set up the same as in the Plurality example,
+but, in this case, one of the candidates supported by the majority bloc wins the election.
 
-Finally, the multi-winner example contrasts bloc plurality with STV.
-It shows two clusters of voters, one slightly larger than the other,
-with two candidates per voter cluster.
-In bloc plurality, the larger cluster can sweep the election,
-securing both seats on the committee, shutting out the other cluster entirely.
-However, in STV, each cluster gets one seat on the committee---a more proportional outcome.
+The Borda example explains how Borda scores are calculated,
+then demonstrates Borda's tendency to elect centrist "consensus" candidates.
+
+Finally, the multi-winner example contrasts Bloc Plurality with STV.
+It shows two blocs of voters, one slightly larger than the other,
+with two candidates per voter bloc.
+In Bloc Plurality, the larger bloc can sweep the election,
+securing both seats on the committee, shutting out the other bloc entirely.
+However, in STV, each bloc gets one seat on the committee---a more proportional outcome.
 
 \subsection{Input}%
 \label{sub:Input}
+% TODO: define "the plot"
 On the plot, voters are blue dots, and candidates are yellow stars.
 There are four primary methods for placing voters and candidates on the plot.
 \begin{itemize}
@@ -55,7 +55,7 @@ There are four primary methods for placing voters and candidates on the plot.
 
     By stacking sets of samples drawn from different distributions,
     the user can easily create multiple clusters of voters or candidates.
-
+    %
     As in \cite{elkind}, the supported distributions are
     the Gaussian, the Uniform Rectangle, and the Uniform Disc.
 
@@ -96,7 +96,7 @@ only the Delete and Hide options are available.
 
 \subsection{Running Elections}%
 \label{sub:Running Elections}
-At the bottom of the sidebar, the user can choose their desired voting method,
+At the bottom of the sidebar, the user can choose their desired voting rule,
 select the number of winners, and run the election.
 Running the election updates the plot,
 making the winning candidates visually distinct from the others.

@@ -10,8 +10,11 @@ all voters and all candidates.
 A voter's ballot ranks candidates in order of increasing distance.
 A collection of such rankings is called a \textit{preference profile}.
 
+\textbf{Voting Rule.}
+In this context, a voting rule is a function that takes as input a preference profile
+and returns a set of one or more winning alternatives.
+
 \textbf{Single-Winner Voting Rules.}
-Let there be $n$ voters and $m$ candidates.
 
 \begin{itemize}[topsep=0em]
 \item[]
@@ -37,7 +40,7 @@ these rules elect a committee of size $k$.
   \item[]
   \textbf{Single Non-Transferable Vote (SNTV).}
   First-place votes are tallied.
-  The $k$ candidates with the highest score are elected.
+  The $k$ highest-scoring candidates are elected.
 
   \textbf{Bloc Plurality.}
   Each candidate's score is the number of ballots in which
@@ -47,7 +50,8 @@ these rules elect a committee of size $k$.
   \textbf{$k$-Borda.}
   The $k$ candidates with the highest Borda scores are elected.
 
-  \textbf{STV}
+  \textbf{Single Transferable Vote (STV).}
+  Let $n$ be the number of voters.
   First-place votes are tallied to give initial candidate scores.
   Iterate the following process:
   if any candidate's score $s$ is greater than
@@ -59,7 +63,7 @@ these rules elect a committee of size $k$.
 
   Only one candidate can be elected at a time:
   if multiple candidates are simultaneously above threshold,
-  the candidate with greater score is elected,
+  the candidate with greater score is elected
   and their support is redistributed before any other candidates are elected.
 
 \end{itemize}
