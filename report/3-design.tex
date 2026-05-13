@@ -1,0 +1,150 @@
+SEE provides an interactive plot alongside a sidebar that guides users from first contact---via
+a tutorial---through placing voters and candidates, running elections under various voting rules,
+and optionally grounding the simulation in real political survey data.
+
+\subsection{Tutorial}%
+\label{sub:Tutorial}
+The tutorial serves to orient the user, introduce the voting rules,
+and set user expectations for the allowable interaction patterns in the application.
+
+It begins by defining the spatial model, contextualizing the axes
+as representing a policy or ideology space, and emphasizing the
+key assumption: only the distance between voters and candidates matters
+in determining how voters will fill out their ballots.
+
+Next, it explains the application and the primary ways of using it
+via a series of examples that introduce Plurality, Borda, IRV, and STV.
+At each step, the tutorial shows an example plot
+and asks the user to make a prediction of which candidate will win.
+
+The Plurality example demonstrates the well-known "spoiler effect",
+in which a majority bloc of voters is shut out of representation
+because they split their votes across multiple candidates
+while the minority bloc is unified in their support of a single candidate.
+
+The IRV example shows how runoff voting can avoid the spoiler effect:
+the plot is set up the same as in the Plurality example,
+but, in this case, one of the candidates supported by the majority bloc wins the election.
+
+The Borda example explains how Borda scores are calculated,
+then demonstrates Borda's tendency to elect centrist "consensus" candidates.
+
+Finally, the multi-winner example contrasts Bloc Plurality with STV.
+It shows two blocs of voters, one slightly larger than the other,
+with two candidates per voter bloc.
+In Bloc Plurality, the larger bloc can sweep the election,
+securing both seats on the committee, shutting out the other bloc entirely.
+However, in STV, each bloc gets one seat on the committee---a more proportional outcome.
+
+\subsection{Input}%
+\label{sub:Input}
+On the plot, voters are blue dots, and candidates are yellow stars.
+There are four primary methods for placing voters and candidates on the plot.
+\begin{itemize}
+  \item \textbf{Manual Input.}
+    The user can select to add a candidate or a voter,
+    then click anywhere in the plot to add a point at that location.
+
+  \item \textbf{Synthetic Sampling.}
+    In the sidebar, the user can choose from any of the available distributions.
+    They can set the distribution center by dragging it on the plot,
+    or specifying the desired coordinate position in an input box.
+    They can set distribution parameters with sliders or by entering
+    the desired value in an input box.
+    Then, they can set whether to sample voters or candidates,
+    and set the number of points to be sampled.
+    Finally, clicking "add data" adds these points to the plot.
+
+    By stacking sets of samples drawn from different distributions,
+    the user can easily create multiple clusters of voters or candidates.
+    %
+    As in \cite{elkind}, the supported distributions are
+    the Gaussian, the Uniform Rectangle, and the Uniform Disc.
+
+  \item \textbf{Survey Data.}
+    Upon selecting the "Survey" tab in the sidebar,
+    the user can select two "Ideology" axes or political issues
+    to serve as the axes of the plot.
+    Then, they can view the distribution of political opinion survey respondents across these axes
+    % TODO: clarify this interaction
+    and model candidates based on the survey questions.
+    Additionally, users can rank the survey questions used to inform each axis to see
+    how election outcomes differ when voter priorities change.
+
+  \item \textbf{Data Upload.}
+    If a user has exported a JSON file of the candidate and voter points,
+    or survey respondent points, from a previously-generated plot,
+    they may upload that data.
+
+\end{itemize}
+
+\subsection{Plot Management}%
+\label{sub:Plot Management}
+Every point manually added and every distribution sampled from
+appears as a separate line item in the "Data Points" section of the sidebar.
+The line describes the parameters that created it.
+For every distribution line, the following interactions are available:
+\begin{itemize}
+  \item \textbf{Edit.}
+    Highlights the distribution and reveals its settings;
+    any of the settings (including type, count, position, and parameters)
+    can be changed, and when the user clicks "update",
+    the points are resampled.
+    The user can click "cancel" at any point in this interaction
+    if they want to keep the old settings.
+  \item \textbf{Delete.}
+    Removes this distribution.
+  \item \textbf{Hide.}
+    Hides this distribution; it is temporarily disabled
+    for any election runs, but stays listed in the sidebar
+    to be easily re-enabled later.
+\end{itemize}
+For any line item representing a manually-placed candidate or voter,
+only the Delete and Hide options are available.
+
+\subsection{Running Elections}%
+\label{sub:Running Elections}
+At the bottom of the sidebar, the user can choose their desired voting rule,
+select the number of winners, and run the election.
+Running the election updates the plot,
+labeling the winning candidate(s).
+
+
+\subsection{Survey Data}%
+\label{sub:Survey Data}
+The Fall 2014 Simon Poll \cite{simon}, conducted by the non-partisan Paul Simon Public
+Policy Institute, interviewed 1,006 registered voters across Illinois from
+September 23--October 15, 2014.
+%
+In addition to demographic information---such as
+sex, race, ZIP code, income level, education level, and religiosity---the
+survey asks respondents whether and for whom they plan to vote in the upcoming
+November 2014 statewide election
+and for their opinions on political issues including
+government reform, LGBTQ+ rights, abortion rights, gun control laws,
+taxation, government budget, public education, police, and public policy.
+
+We determined three political topics to use for our axes from this survey:
+‘Role of Government’, ‘Social Issues’, and ‘Guns’.
+Each topic cluster was validated through pairwise cross-tabulation analysis:
+for each pair of questions within a topic,
+we computed the conditional probability that a respondent holding a conservative
+(or liberal) position on one question also held a consistent position on the
+other. A question was included only if all pairwise conditional probabilities
+exceeded 50\% in both directions. All question pairs within the final three
+topics passed this threshold (ranging from 51–79\%); four questions were excluded.
+The questions in the survey were originally on
+4-point Likert scale (strongly favor to strongly oppose), 3-point scale, and binary scale.
+To normalize, we recode all scales to a 0-1 range before scoring.
+% TODO: add details explaining how this actually works
+Question weights are assigned by linear decay based on the user's ranking---the
+top-ranked question receives the most weight, with each subsequent question
+receiving proportionally less.
+
+\subsection{Implementation}%
+\label{sub:Implementation}
+The application front end is built with Svelte and D3 in JS,
+with Vite as the server.
+The election algorithms are implemented in Python and
+compiled to Web Assembly via Pyodide so that they can be run in browser.
+
