@@ -4,7 +4,7 @@
   import { run_election } from './bridge.js';
   import { gaussian, uniformRect, uniformDisc, surveyFromData } from './lib/pointGen.js';
   import { INDEXES, defaultRankings, rankingsToWeights, scoreRespondent } from './lib/surveyIndexes.js';
-  import { makeLayer, toLayerBundle, formatLabel, layerColor } from './lib/layerUtils.js';
+  import { makeLayer, toLayerBundle, formatLabel, layerColor, VOTER_LAYER_COLOR, CANDIDATE_LAYER_COLOR } from './lib/layerUtils.js';
   import PlotCanvas from './components/PlotCanvas.svelte';
   import ConfigPanel from './components/ConfigPanel.svelte';
   import DataPointsList from './components/DataPointsList.svelte';
@@ -61,12 +61,13 @@
         params = { kind: 'uniform_disc', cx, cy, r: Number(store.discRadius), type, n };
       }
 
-      const color = layerColor(store.layers.length);
+      const color = type === 'voter' ? VOTER_LAYER_COLOR : CANDIDATE_LAYER_COLOR;
       if (store.editingLayerId) {
         const id = store.editingLayerId;
         const existing = store.layers.find(l => l.id === id);
+        const mergedColor = type === 'voter' ? VOTER_LAYER_COLOR : CANDIDATE_LAYER_COLOR;
         store.layers = store.layers.map(l =>
-          l.id === id ? { ...makeLayer(type, pts, label, params, existing?.color ?? color), id } : l
+          l.id === id ? { ...makeLayer(type, pts, label, params, mergedColor), id } : l
         );
         store.editingLayerId = null;
         store.highlightedLayerId = null;
@@ -88,10 +89,10 @@
       const existing = store.layers.find(l => l.params?.kind === 'survey');
       if (existing) {
         store.layers = store.layers.map(l =>
-          l.id === existing.id ? { ...l, points: pts, label } : l
+          l.id === existing.id ? { ...l, points: pts, label, color: VOTER_LAYER_COLOR } : l
         );
       } else {
-        store.layers = [...store.layers, makeLayer('voter', pts, label, { kind: 'survey' }, layerColor(store.layers.length))];
+        store.layers = [...store.layers, makeLayer('voter', pts, label, { kind: 'survey' }, VOTER_LAYER_COLOR)];
       }
 
     }
@@ -114,25 +115,32 @@
     const newLayers = [];
     const isValidPt = p => p && Number.isFinite(p.x) && Number.isFinite(p.y);
     if (raw && Array.isArray(raw.layers)) {
+      let importCandIdx = 0;
       raw.layers.forEach((l, idx) => {
         if (l.type !== 'voter' && l.type !== 'candidate') return;
         const pts = (l.points ?? []).filter(isValidPt);
         if (!pts.length) return;
+        const candColor =
+          l.type === 'candidate' && fileKind === 'survey'
+            ? (l.color ?? layerColor(store.layers.length + importCandIdx++))
+            : l.type === 'voter'
+              ? VOTER_LAYER_COLOR
+              : CANDIDATE_LAYER_COLOR;
         newLayers.push({
           id: crypto.randomUUID(),
           label: l.label ?? formatLabel({ kind: 'custom', filename }),
           type: l.type,
           points: pts,
           visible: l.visible ?? true,
-          color: l.color ?? layerColor(store.layers.length + idx),
+          color: candColor,
           params: l.params ?? null,
         });
       });
     } else if (Array.isArray(raw)) {
       const voters = raw.filter(p => p.type === 'voter' && isValidPt(p)).map(({ type, ...rest }) => rest);
       const candidates = raw.filter(p => p.type === 'candidate' && isValidPt(p)).map(({ type, ...rest }) => rest);
-      if (voters.length) newLayers.push(makeLayer('voter', voters, formatLabel({ kind: 'custom', filename }), null, layerColor(store.layers.length)));
-      if (candidates.length) newLayers.push(makeLayer('candidate', candidates, formatLabel({ kind: 'custom', filename })));
+      if (voters.length) newLayers.push(makeLayer('voter', voters, formatLabel({ kind: 'custom', filename }), null, VOTER_LAYER_COLOR));
+      if (candidates.length) newLayers.push(makeLayer('candidate', candidates, formatLabel({ kind: 'custom', filename }), null, CANDIDATE_LAYER_COLOR));
     } else {
       alert('Unrecognized JSON shape — expected an export object or an array of {x, y, type} points.');
       return;
@@ -169,6 +177,11 @@
 
   // --- Candidate generation (survey tab) ---
 
+  function nextSurveyCandidateColor() {
+    const n = store.layers.filter(l => l.type === 'candidate' && l.params?.kind === 'survey_candidate').length;
+    return layerColor(n);
+  }
+
   function candidatePosition(answers) {
     if (!store.surveyXAxis || !store.surveyYAxis || store.surveyXAxis === store.surveyYAxis) return { x: 0.5, y: 0.5 };
     const xIndex = INDEXES.find(i => i.id === store.surveyXAxis);
@@ -182,7 +195,7 @@
   function addCandidateLayer(answers, name) {
     const { x, y } = candidatePosition(answers);
     const pt = { x, y, _profile: { ...answers, _name: name } };
-    store.layers = [...store.layers, makeLayer('candidate', [pt], name, { kind: 'survey_candidate' }, layerColor(store.layers.length))];
+    store.layers = [...store.layers, makeLayer('candidate', [pt], name, { kind: 'survey_candidate' }, nextSurveyCandidateColor())];
     store.electionResult = null;
   }
 
@@ -325,10 +338,13 @@
     if (store.addMode) {
       const type = store.addMode;
       const kind = type === 'candidate' && store.activeTab === 'survey' ? { kind: 'survey_candidate' } : null;
+      const plotColor =
+        type === 'voter' ? VOTER_LAYER_COLOR : kind ? nextSurveyCandidateColor() : CANDIDATE_LAYER_COLOR;
       store.layers = [...store.layers, makeLayer(
         type, [{ x, y }],
         `${type.charAt(0).toUpperCase() + type.slice(1)}(${x.toFixed(2)},${y.toFixed(2)})`,
-        kind, layerColor(store.layers.length)
+        kind,
+        plotColor
       )];
       store.electionResult = null;
     }
@@ -810,14 +826,14 @@
   }
   .toolbar-btn:hover:not(:disabled) { background: rgba(45,43,39,0.07); }
   .toolbar-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-  .toolbar-btn.active { background: rgba(201,100,66,0.12); border-color: #C96442; color: #C96442; }
+  .toolbar-btn.active { background: rgba(204,120,87,0.12); border-color: #CC7857; color: #CC7857; }
   .kbd {
     display: inline-block; margin-left: 4px; padding: 0 5px;
     border: 1px solid #C0BAB2; border-bottom-width: 2px; border-radius: 3px;
     background: #FAF7F2; color: #6B6560; font-size: 10px; font-weight: 600;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height: 1.4;
   }
-  .toolbar-btn.active .kbd { border-color: #C96442; color: #C96442; background: #fff; }
+  .toolbar-btn.active .kbd { border-color: #CC7857; color: #CC7857; background: #fff; }
 
   .main { display: flex; flex: 1; overflow: hidden; }
   .plot-area { position: relative; flex: 1; overflow: hidden; border: 1px solid #D5CFC6; border-right: none; background: #F5F0E8; }
@@ -832,8 +848,8 @@
   }
   .mode-bubble strong { color: #fff; font-weight: 600; text-transform: capitalize; }
   .mode-dot {
-    width: 8px; height: 8px; border-radius: 50%; background: #C96442;
-    box-shadow: 0 0 0 0 rgba(201,100,66,0.6);
+    width: 8px; height: 8px; border-radius: 50%; background: #CC7857;
+    box-shadow: 0 0 0 0 rgba(204,120,87,0.6);
     animation: bubble-pulse 1.4s ease-out infinite;
   }
   .mode-hint { opacity: 0.7; margin-left: 4px; }
@@ -842,9 +858,9 @@
     to   { opacity: 1; transform: translate(-50%, 0); }
   }
   @keyframes bubble-pulse {
-    0%   { box-shadow: 0 0 0 0 rgba(201,100,66,0.6); }
-    70%  { box-shadow: 0 0 0 8px rgba(201,100,66,0); }
-    100% { box-shadow: 0 0 0 0 rgba(201,100,66,0); }
+    0%   { box-shadow: 0 0 0 0 rgba(204,120,87,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(204,120,87,0); }
+    100% { box-shadow: 0 0 0 0 rgba(204,120,87,0); }
   }
 
   .resize-handle {
@@ -854,7 +870,7 @@
     background: #D5CFC6;
     transition: background 0.15s;
   }
-  .resize-handle:hover { background: #C96442; }
+  .resize-handle:hover { background: #CC7857; }
 
   .right-panel {
     flex-shrink: 0;
@@ -891,9 +907,9 @@
   .tab-confirm-cancel:hover { background: #EDE8DF; }
   .tab-confirm-ok {
     padding: 6px 14px; border: none; border-radius: 4px;
-    background: #C96442; color: #fff; cursor: pointer; font-size: 12px; font-weight: 600;
+    background: #CC7857; color: #fff; cursor: pointer; font-size: 12px; font-weight: 600;
   }
-  .tab-confirm-ok:hover { background: #A84F32; }
+  .tab-confirm-ok:hover { background: #B8634A; }
 
   .popup-backdrop {
     position: fixed; inset: 0; background: rgba(0,0,0,0.35);

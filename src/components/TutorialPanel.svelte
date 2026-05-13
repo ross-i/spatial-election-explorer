@@ -100,7 +100,7 @@
       {#if currentStep.electionResult}
         <div class="tut-hint reveal">
           <span class="hint-icon">★</span>
-          The winner is highlighted on the plot to the left.
+          Elected candidates appear in a darker tone on the plot to the left; others are faded.
         </div>
       {:else if currentStep.layers.length > 0}
         <div class="tut-hint">
@@ -178,11 +178,11 @@
     transition: background 0.1s, color 0.1s;
     width: 100%;
   }
-  .tut-item:hover { background: rgba(201,100,66,0.07); color: #2D2B27; }
+  .tut-item:hover { background: rgba(204,120,87,0.07); color: #2D2B27; }
   .tut-item.active {
-    border-left-color: #C96442;
-    color: #C96442;
-    background: rgba(201,100,66,0.1);
+    border-left-color: #CC7857;
+    color: #CC7857;
+    background: rgba(204,120,87,0.1);
     font-weight: 600;
   }
 
@@ -193,15 +193,15 @@
     min-width: 12px;
     flex-shrink: 0;
   }
-  .tut-item.active .tut-num { color: #C96442; }
+  .tut-item.active .tut-num { color: #CC7857; }
 
   .tut-name { flex: 1; }
 
   .step-pip {
     font-size: 9px;
     font-family: monospace;
-    color: #C96442;
-    background: rgba(201,100,66,0.12);
+    color: #CC7857;
+    background: rgba(204,120,87,0.12);
     padding: 1px 4px;
     border-radius: 8px;
     flex-shrink: 0;
@@ -229,7 +229,7 @@
     padding: 0;
     transition: color 0.1s, background 0.1s;
   }
-  .sidebar-toggle:hover { color: #C96442; background: #EDE8DF; }
+  .sidebar-toggle:hover { color: #CC7857; background: #EDE8DF; }
   .sidebar-toggle.collapsed { left: 0; border-left: 1px solid #D5CFC6; border-right: none; border-radius: 0 4px 4px 0; }
 
   /* ── Content area ── */
@@ -255,7 +255,7 @@
     font-size: 0.65rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: #C96442;
+    color: #CC7857;
     font-family: Georgia, 'Times New Roman', serif;
     font-style: italic;
   }
@@ -290,7 +290,7 @@
     padding: 0;
     transition: background 0.15s;
   }
-  .step-dot.active { background: #C96442; }
+  .step-dot.active { background: #CC7857; }
   .step-dot:hover:not(.active) { background: #9C9690; }
 
   /* ── Body ── */
@@ -306,8 +306,8 @@
   .tut-hint {
     margin-top: 16px;
     padding: 10px 13px;
-    background: rgba(201,100,66,0.07);
-    border-left: 3px solid rgba(201,100,66,0.4);
+    background: rgba(204,120,87,0.07);
+    border-left: 3px solid rgba(204,120,87,0.4);
     border-radius: 2px;
     font-size: 11.5px;
     color: #6B6560;
@@ -317,8 +317,8 @@
     align-items: flex-start;
   }
   .tut-hint.reveal {
-    background: rgba(200,152,58,0.10);
-    border-left-color: #C8983A;
+    background: rgba(204,120,87,0.10);
+    border-left-color: #CC7857;
     color: #5A4A20;
   }
 
@@ -344,13 +344,13 @@
     cursor: pointer;
     transition: border-color 0.1s, color 0.1s, background 0.1s;
   }
-  .nav-btn:hover:not(:disabled) { border-color: #C96442; color: #C96442; }
+  .nav-btn:hover:not(:disabled) { border-color: #CC7857; color: #CC7857; }
   .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-  .done-btn { border-color: #C96442; color: #C96442; font-weight: 600; }
-  .done-btn:hover { background: rgba(201,100,66,0.08); }
+  .done-btn { border-color: #CC7857; color: #CC7857; font-weight: 600; }
+  .done-btn:hover { background: rgba(204,120,87,0.08); }
 
-  .next-btn:hover { border-color: #C96442; color: #C96442; }
+  .next-btn:hover { border-color: #CC7857; color: #CC7857; }
 
   .nav-tutorial-dots { display: flex; gap: 5px; align-items: center; }
 
@@ -364,6 +364,6 @@
     padding: 0;
     transition: background 0.15s;
   }
-  .tut-dot.active { background: #C96442; }
+  .tut-dot.active { background: #CC7857; }
   .tut-dot:hover:not(.active) { background: #9C9690; }
 </style>

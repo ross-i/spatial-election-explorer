@@ -182,8 +182,8 @@
   }
   .dist-btn:hover { background: #EDE8DF; border-color: #9C9690; }
   .dist-btn.active {
-    background: #C96442;
-    border-color: #C96442;
+    background: #CC7857;
+    border-color: #CC7857;
     color: #fff;
     font-weight: 600;
   }
@@ -197,9 +197,9 @@
     background: #FAF7F2; font-size: 13px; color: #2D2B27;
     transition: border-color 0.1s;
   }
-  .coord-input:focus { outline: none; border-color: #C96442; }
+  .coord-input:focus { outline: none; border-color: #CC7857; }
   .slider-row { display: flex; align-items: center; gap: 6px; }
-  .slider-row input[type=range] { flex: 1; accent-color: #C96442; }
+  .slider-row input[type=range] { flex: 1; accent-color: #CC7857; }
   .range-label { font-size: 11px; color: #9C9690; min-width: 12px; }
   .num-input {
     width: 52px; padding: 3px 5px;
@@ -207,14 +207,14 @@
     background: #FAF7F2; font-size: 13px; color: #2D2B27;
     transition: border-color 0.1s;
   }
-  .num-input:focus { outline: none; border-color: #C96442; }
+  .num-input:focus { outline: none; border-color: #CC7857; }
   .count-input {
     width: 80px; padding: 3px 5px;
     border: 1px solid #C0BAB2; border-radius: 3px;
     background: #FAF7F2; font-size: 13px; color: #2D2B27;
     transition: border-color 0.1s;
   }
-  .count-input:focus { outline: none; border-color: #C96442; }
+  .count-input:focus { outline: none; border-color: #CC7857; }
   .btn-sm {
     padding: 3px 10px;
     border: 1px solid #2D2B27;
@@ -226,7 +226,7 @@
     transition: background 0.1s;
   }
   .btn-sm:hover { background: rgba(45,43,39,0.07); }
-  .error-msg { color: #C96442; font-size: 11px; }
-  .input-error { border-color: #C96442 !important; outline: none; }
+  .error-msg { color: #CC7857; font-size: 11px; }
+  .input-error { border-color: #CC7857 !important; outline: none; }
   .warn-msg { color: #A07030; font-size: 11px; }
 </style>

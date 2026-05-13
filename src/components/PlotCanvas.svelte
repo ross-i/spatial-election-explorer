@@ -1,8 +1,15 @@
 <script>
   import { onMount } from 'svelte';
   import * as d3 from 'd3';
+  import { resolveWinnerIds, VOTER_LAYER_COLOR, CANDIDATE_LAYER_COLOR } from '../lib/layerUtils.js';
 
   const { layers, electionResult, showVoters, showCandidates, interactive, onPlotClick, onPointClick, centerPreview, highlightedLayerId, onCenterMove, axisInfo } = $props();
+
+  /** Elected candidates: darker than pre-election fill; stroke stays in ochre family (not UI coral). */
+  const WINNER_FALLBACK_FILL = '#5C4324';
+  const WINNER_FALLBACK_STROKE = '#8E6A22';
+  const LOSER_OPACITY = 0.12;
+  const LOSER_OPACITY_LIT = 0.32;
 
   let svgEl;
 
@@ -69,13 +76,13 @@
       g.append('text')
         .attr('x', xScale(0.2)).attr('y', size + 32)
         .attr('text-anchor', 'end').attr('font-size', '10px')
-        .attr('fill', '#C96442')
+        .attr('fill', '#CC7857')
         .text(axisInfo.x.lowLabel);
       // X high annotation
       g.append('text')
         .attr('x', xScale(0.75)).attr('y', size + 32)
         .attr('text-anchor', 'start').attr('font-size', '10px')
-        .attr('fill', '#C96442')
+        .attr('fill', '#CC7857')
         .text(axisInfo.x.highLabel);
       // Y axis title
       g.append('text')
@@ -87,13 +94,13 @@
       g.append('text')
         .attr('transform', `translate(${-32},${yScale(0.1)}) rotate(-90)`)
         .attr('text-anchor', 'start').attr('font-size', '10px')
-        .attr('fill', '#C96442')
+        .attr('fill', '#CC7857')
         .text(axisInfo.y.lowLabel);
       // Y high annotation starting at y=0.7
       g.append('text')
         .attr('transform', `translate(${-32},${yScale(0.75)}) rotate(-90)`)
         .attr('text-anchor', 'start').attr('font-size', '10px')
-        .attr('fill', '#C96442')
+        .attr('fill', '#CC7857')
         .text(axisInfo.y.highLabel);
     }
 
@@ -113,7 +120,7 @@
         const lit = highlightedLayerId && layer.id === highlightedLayerId;
         const r = lit ? 6 : 4;
         const opacity = 0.75;
-        const fill = layer.color ?? '#3F6E6A';
+        const fill = VOTER_LAYER_COLOR;
         g.selectAll(null)
           .data(layer.points)
           .join('circle')
@@ -151,11 +158,11 @@
 
       if (distribution === 'gaussian') {
         clip.append('rect').attr('width', size).attr('height', size)
-          .attr('fill', 'rgba(201,100,66,0.04)');
+          .attr('fill', 'rgba(204,120,87,0.04)');
         const sdStyles = [
-          { sd: 3, fill: 'rgba(201,100,66,0.05)', stroke: 'rgba(201,100,66,0.28)' },
-          { sd: 2, fill: 'rgba(201,100,66,0.07)', stroke: 'rgba(201,100,66,0.50)' },
-          { sd: 1, fill: 'rgba(201,100,66,0.10)', stroke: 'rgba(201,100,66,0.85)' },
+          { sd: 3, fill: 'rgba(204,120,87,0.05)', stroke: 'rgba(204,120,87,0.28)' },
+          { sd: 2, fill: 'rgba(204,120,87,0.07)', stroke: 'rgba(204,120,87,0.50)' },
+          { sd: 1, fill: 'rgba(204,120,87,0.10)', stroke: 'rgba(204,120,87,0.85)' },
         ];
         for (const { sd, fill, stroke } of sdStyles) {
           distCircles.push(
@@ -171,15 +178,15 @@
           .attr('x', xScale(x - rectWidth / 2))
           .attr('y', yScale(y + rectHeight / 2))
           .attr('width', rectWidth * size).attr('height', rectHeight * size)
-          .attr('fill', 'rgba(201,100,66,0.10)')
-          .attr('stroke', 'rgba(201,100,66,0.70)')
+          .attr('fill', 'rgba(204,120,87,0.10)')
+          .attr('stroke', 'rgba(204,120,87,0.70)')
           .attr('stroke-width', 1.5).attr('stroke-dasharray', '5 3');
       } else if (distribution === 'uniform_disc') {
         distCircle = clip.append('circle')
           .attr('cx', px).attr('cy', py)
           .attr('r', discRadius * size)
-          .attr('fill', 'rgba(201,100,66,0.10)')
-          .attr('stroke', 'rgba(201,100,66,0.70)')
+          .attr('fill', 'rgba(204,120,87,0.10)')
+          .attr('stroke', 'rgba(204,120,87,0.70)')
           .attr('stroke-width', 1.5).attr('stroke-dasharray', '5 3');
       }
 
@@ -250,6 +257,11 @@
     }
 
     if (showCandidates) {
+<<<<<<< feat/michael
+      const winnerIds = resolveWinnerIds(layers, electionResult);
+      const postElection = Boolean(electionResult?.length) && winnerIds.size > 0;
+
+=======
       const winnerIds = new Set();
       const winnerPositions = [];
       if (electionResult) {
@@ -261,57 +273,46 @@
           }
         }
       }
+>>>>>>> dev
       for (const layer of layers.filter(l => l.visible && l.type === 'candidate')) {
         const lit = highlightedLayerId && layer.id === highlightedLayerId;
-        const fill = layer.color ?? '#C8983A';
-        const stroke = d3.color(fill)?.darker(0.6).formatHex() ?? '#8E6A22';
+        const baseFill = layer.color ?? CANDIDATE_LAYER_COLOR;
+        const baseStroke = d3.color(baseFill)?.darker(0.5).formatHex() ?? '#B8634A';
         layer.points.forEach((p, i) => {
           const isWinner = winnerIds.has(`${layer.id}-${i}`) ||
             winnerPositions.some(w => Math.abs(w.x - p.x) < 1e-9 && Math.abs(w.y - p.y) < 1e-9);
           const cx = xScale(p.x), cy = yScale(p.y);
-          const sz = isWinner ? 14 : (lit ? 14 : 10);
+          const sz = postElection ? 10 : (lit ? 14 : 10);
+          let fill = baseFill;
+          let stroke = baseStroke;
+          let opacity = 1;
+          let strokeW = (lit || isWinner) ? 1 : 0.5;
+
+          if (postElection) {
+            if (isWinner) {
+              fill = d3.color(baseFill)?.darker(0.95).formatHex() ?? WINNER_FALLBACK_FILL;
+              stroke = d3.color(baseFill)?.darker(1.25).formatHex() ?? WINNER_FALLBACK_STROKE;
+              strokeW = 1;
+              opacity = 1;
+            } else {
+              opacity = lit ? LOSER_OPACITY_LIT : LOSER_OPACITY;
+              strokeW = 0.5;
+            }
+          }
+
           g.append('path')
             .datum(p)
             .attr('d', starPath(cx, cy, sz))
             .attr('fill', fill)
             .attr('stroke', stroke)
-            .attr('stroke-width', (lit || isWinner) ? 1 : 0.5)
-            .attr('opacity', 1)
+            .attr('stroke-width', strokeW)
+            .attr('opacity', opacity)
             .style('cursor', p._profile ? 'pointer' : 'default')
             .on('click', function(event, d) {
               if (!d._profile || !onPointClick) return;
               event.stopPropagation();
               onPointClick(d._profile);
             });
-          if (isWinner) {
-            g.append('text')
-              .attr('x', cx).attr('y', cy - 18)
-              .attr('text-anchor', 'middle')
-              .attr('font-size', '11px')
-              .attr('font-family', "Georgia, 'Times New Roman', serif")
-              .attr('font-style', 'italic')
-              .attr('fill', '#C96442')
-              .attr('pointer-events', 'none')
-              .text('winner');
-          }
-          {
-            const m = /Candidate\s+([A-Z])/i.exec(layer.label ?? '');
-            const letter = m ? m[1].toUpperCase() : null;
-            if (letter) {
-              g.append('text')
-                .attr('x', cx + sz + 5).attr('y', cy + 5)
-                .attr('text-anchor', 'start')
-                .attr('font-size', '14px')
-                .attr('font-family', "Georgia, 'Times New Roman', serif")
-                .attr('font-weight', '700')
-                .attr('fill', '#2D2B27')
-                .attr('stroke', '#F5F0E8')
-                .attr('stroke-width', 3)
-                .attr('paint-order', 'stroke')
-                .attr('pointer-events', 'none')
-                .text(letter);
-            }
-          }
         });
       }
     }

@@ -233,8 +233,8 @@
     display: flex; align-items: center; justify-content: center;
     border-radius: 3px; flex-shrink: 0;
   }
-  .x-tag { background: #C96442; color: white; }
-  .y-tag { background: #C96442; color: white; }
+  .x-tag { background: #CC7857; color: white; }
+  .y-tag { background: #CC7857; color: white; }
 
   .axis-pills { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
   .pill {
@@ -243,8 +243,8 @@
     transition: opacity 0.1s;
   }
   .pill:hover { border-color: #888; }
-  .active-x { background: #C96442; color: white; border-color: #C96442; }
-  .active-y { background: #C96442; color: white; border-color: #C96442; }
+  .active-x { background: #CC7857; color: white; border-color: #CC7857; }
+  .active-y { background: #CC7857; color: white; border-color: #CC7857; }
   .pill.faded { background: #e5e7eb; color: #9ca3af; border-color: #d1d5db; cursor: not-allowed; pointer-events: none; }
 
   .collapse-btn {
