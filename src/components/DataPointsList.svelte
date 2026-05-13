@@ -53,20 +53,22 @@
         store.surveyXAxis &&
         store.surveyYAxis &&
         store.surveyXAxis !== store.surveyYAxis}
-      <button
-        class="cand-btn primary"
-        onclick={onGenerateRandom}
-        disabled={!axesReady}
-        title={axesReady ? "" : "Select both axes first"}
-        >Random Candidate</button
-      >
-      <button
-        class="cand-btn primary"
-        onclick={onOpenProfiler}
-        disabled={!axesReady}
-        title={axesReady ? "" : "Select both axes first"}
-        >Profile Candidate</button
-      >
+      <span class="cand-btn-group" data-walkthrough="survey-candidate-btns">
+        <button
+          class="cand-btn primary"
+          onclick={onGenerateRandom}
+          disabled={!axesReady}
+          title={axesReady ? "" : "Select both axes first"}
+          >Random Candidate</button
+        >
+        <button
+          class="cand-btn primary"
+          onclick={onOpenProfiler}
+          disabled={!axesReady}
+          title={axesReady ? "" : "Select both axes first"}
+          >Profile Candidate</button
+        >
+      </span>
     {/if}
   </div>
 
@@ -235,6 +237,11 @@
     height: 20px;
     display: block;
     flex-shrink: 0;
+  }
+  .cand-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
   .cand-btn {
     padding: 2px 7px;
