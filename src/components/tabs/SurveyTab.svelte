@@ -121,7 +121,7 @@
     {#if store.surveyXRankOpen && xAxis}
       {@const idx = indexById(xAxis)}
       {@const rankings = store.surveyRankings?.[idx.id] ?? idx.questions.map(q => q.col)}
-      <div class="rank-panel">
+      <div class="rank-panel" data-walkthrough="rank-panel">
         <div class="direction-hint">0 ← {idx.lowLabel} &nbsp;...&nbsp; {idx.highLabel} → 1</div>
         <div class="rank-hint">drag to re-rank — top = most important to voters</div>
         <ul

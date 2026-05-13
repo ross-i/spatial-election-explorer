@@ -66,17 +66,24 @@
     const r = highlightedEl.getBoundingClientRect();
     targetRect = { top: r.top, left: r.left, width: r.width, height: r.height };
 
-    const spaceRight = vw - (r.left + r.width);
-    const spaceLeft = r.left;
+    // If the target lives inside the side panel, treat the panel's edges as
+    // the reference for left/right placement so the card doesn't overlap it.
+    const panel = highlightedEl.closest('.right-panel');
+    const pr = panel ? panel.getBoundingClientRect() : null;
+    const refRight = pr ? pr.right : r.left + r.width;
+    const refLeft = pr ? pr.left : r.left;
+
+    const spaceRight = vw - refRight;
+    const spaceLeft = refLeft;
     const spaceBelow = vh - (r.top + r.height);
     const spaceAbove = r.top;
 
     let top, left;
     if (spaceRight >= CARD_W + GAP + MARGIN) {
-      left = r.left + r.width + GAP;
+      left = refRight + GAP;
       top = Math.max(MARGIN, Math.min(vh - CARD_H_EST - MARGIN, r.top + r.height / 2 - CARD_H_EST / 2));
     } else if (spaceLeft >= CARD_W + GAP + MARGIN) {
-      left = r.left - CARD_W - GAP;
+      left = refLeft - CARD_W - GAP;
       top = Math.max(MARGIN, Math.min(vh - CARD_H_EST - MARGIN, r.top + r.height / 2 - CARD_H_EST / 2));
     } else if (spaceBelow >= CARD_H_EST + GAP + MARGIN) {
       top = r.top + r.height + GAP;
@@ -103,12 +110,16 @@
     };
   });
 
+  let prevStep = null;
   $effect(() => {
     void step;
     clearHighlight();
-    if (step?.prep) {
+    // Skip prep on the initial mount so re-entering the walkthrough doesn't
+    // wipe restored tutorial state. Run prep only when navigating between steps.
+    if (step?.prep && prevStep !== null) {
       try { step.prep(store); } catch {}
     }
+    prevStep = step;
     if (step?.target) {
       requestAnimationFrame(() => {
         const el = document.querySelector(step.target);
@@ -125,6 +136,20 @@
       recompute();
     }
     return clearHighlight;
+  });
+
+  // Auto-advance when the step's advanceWhen(store) becomes true. Skip the
+  // very first run after the step changes so prep-set state can't trip it.
+  let armedForStep = null;
+  $effect(() => {
+    const s = step;
+    if (!s?.advanceWhen) return;
+    const ready = (() => { try { return !!s.advanceWhen(store); } catch { return false; } })();
+    if (armedForStep !== s) {
+      armedForStep = s;
+      if (ready) return; // prep already satisfies it — wait for it to flip
+    }
+    if (ready) next();
   });
 
   // Dim rectangles around target (or full-screen when no target)

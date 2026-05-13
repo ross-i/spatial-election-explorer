@@ -61,7 +61,7 @@
     {/each}
   </div>
 
-  <div class="generate-row">
+  <div class="generate-row" data-walkthrough="run-election-row">
     <select bind:value={store.method} class="method-select"
       onchange={() => { store.electionResult = null; }}>
       {#each METHODS as m}
@@ -70,7 +70,7 @@
     </select>
     <input type="number" class="winners-input" min="1" bind:value={store.numWinners} title="# winners"
       oninput={() => { store.electionResult = null; }}>
-    <button class="btn-generate" data-walkthrough="run-election-btn" onclick={onGenerate} disabled={store.isGenerating}>
+    <button class="btn-generate" onclick={onGenerate} disabled={store.isGenerating}>
       {#if store.isGenerating}
         <span class="spinner"></span>running
       {:else}
