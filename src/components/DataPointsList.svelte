@@ -15,8 +15,10 @@
     <span class="panel-title">Data Points</span>
     {#if store.activeTab === 'survey'}
       {@const axesReady = store.surveyXAxis && store.surveyYAxis && store.surveyXAxis !== store.surveyYAxis}
-      <button class="cand-btn primary" onclick={onGenerateRandom} disabled={!axesReady} title={axesReady ? '' : 'Select both axes first'}>Random Candidate</button>
-      <button class="cand-btn primary" onclick={onOpenProfiler} disabled={!axesReady} title={axesReady ? '' : 'Select both axes first'}>Profile Candidate</button>
+      <span class="cand-btn-group" data-walkthrough="survey-candidate-btns">
+        <button class="cand-btn primary" onclick={onGenerateRandom} disabled={!axesReady} title={axesReady ? '' : 'Select both axes first'}>Random Candidate</button>
+        <button class="cand-btn primary" onclick={onOpenProfiler} disabled={!axesReady} title={axesReady ? '' : 'Select both axes first'}>Profile Candidate</button>
+      </span>
     {/if}
   </div>
 
@@ -59,7 +61,7 @@
     {/each}
   </div>
 
-  <div class="generate-row">
+  <div class="generate-row" data-walkthrough="run-election-row">
     <select bind:value={store.method} class="method-select"
       onchange={() => { store.electionResult = null; }}>
       {#each METHODS as m}
@@ -72,7 +74,7 @@
       {#if store.isGenerating}
         <span class="spinner"></span>running
       {:else}
-        generate
+        run election
       {/if}
     </button>
   </div>
@@ -107,6 +109,7 @@
     color: #6B6560;
   }
   .color-swatch { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .cand-btn-group { display: inline-flex; gap: 6px; }
   .cand-btn {
     padding: 2px 7px; border-radius: 3px; border: 1px solid #C0BAB2;
     background: #FAF7F2; color: #2D2B27; cursor: pointer; font-size: 10px; font-weight: 500;

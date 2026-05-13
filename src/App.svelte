@@ -9,6 +9,7 @@
   import ConfigPanel from './components/ConfigPanel.svelte';
   import DataPointsList from './components/DataPointsList.svelte';
   import TutorialPanel from './components/TutorialPanel.svelte';
+  import WalkthroughOverlay from './components/WalkthroughOverlay.svelte';
   import { TUTORIALS } from './lib/tutorials.js';
   import CandidateProfiler from './components/CandidateProfiler.svelte';
 
@@ -410,7 +411,10 @@
     store.centerY = parseFloat(y.toFixed(3));
   }
 
-  let interactive = $derived(!store.tutorialMode && (store.addMode !== null || store.selectingCenter));
+  let interactive = $derived(
+    (!store.tutorialMode || !!TUTORIALS[store.activeTutorialIdx]?.walkthrough) &&
+    (store.addMode !== null || store.selectingCenter)
+  );
 
   $effect(() => {
     const rankings = store.surveyRankings;
@@ -424,21 +428,24 @@
     const xWeights = rankingsToWeights(rk[xIndex.id]);
     const yWeights = rankingsToWeights(rk[yIndex.id]);
 
+    if (store.activeTab !== 'survey') return;
+
     const surveyLayer = untrack(() => store.layers.find(l => l.params?.kind === 'survey'));
     const candidateLayers = untrack(() =>
       store.layers.filter(l => l.type === 'candidate' && l.points.some(p => p._profile))
     );
-    if (!surveyLayer && !candidateLayers.length) return;
 
     let newSurveyPts = null;
     let newSurveyLabel = null;
-    if (data && surveyLayer) {
+    if (data) {
       newSurveyPts = surveyFromData(data, xIndex, yIndex, rk);
       newSurveyLabel = `Survey: ${xIndex.label} × ${yIndex.label} (${newSurveyPts.length} respondents)`;
     }
 
+    if (!surveyLayer && !candidateLayers.length && !newSurveyPts?.length) return;
+
     untrack(() => {
-      store.layers = store.layers.map(l => {
+      let layers = store.layers.map(l => {
         if (surveyLayer && l.id === surveyLayer.id && newSurveyPts?.length) {
           return { ...l, points: newSurveyPts, label: newSurveyLabel };
         }
@@ -453,11 +460,19 @@
         }
         return l;
       });
+      if (!surveyLayer && newSurveyPts?.length) {
+        layers = [
+          makeLayer('voter', newSurveyPts, newSurveyLabel, { kind: 'survey' }, layerColor(layers.length)),
+          ...layers,
+        ];
+      }
+      store.layers = layers;
       store.electionResult = null;
     });
   });
 
   let axisInfo = $derived(
+    (!store.tutorialMode || !!TUTORIALS[store.activeTutorialIdx]?.walkthrough) &&
     store.activeTab === 'survey' &&
     store.surveyXAxis && store.surveyYAxis && store.surveyXAxis !== store.surveyYAxis
       ? { x: INDEXES.find(i => i.id === store.surveyXAxis), y: INDEXES.find(i => i.id === store.surveyYAxis) }
@@ -468,12 +483,91 @@
     TUTORIALS[store.activeTutorialIdx]?.steps[store.activeTutorialStep] ?? null
   );
 
+  let isWalkthrough = $derived(
+    store.tutorialMode && !!TUTORIALS[store.activeTutorialIdx]?.walkthrough
+  );
+
+  let userSnapshot = null;    // user's pre-tutorial app state
+  let tutorialSnapshot = null; // walkthrough-internal state, kept between visits
+
+  function cloneLayers(layers) {
+    return layers.map(l => ({
+      ...l,
+      points: l.points.map(p => ({ ...p })),
+      params: l.params ? { ...l.params } : l.params,
+    }));
+  }
+
+  function captureState() {
+    return {
+      activeTab: store.activeTab,
+      surveyXAxis: store.surveyXAxis,
+      surveyYAxis: store.surveyYAxis,
+      surveyRankings: store.surveyRankings ? { ...store.surveyRankings } : store.surveyRankings,
+      surveyXRankOpen: store.surveyXRankOpen,
+      surveyYRankOpen: store.surveyYRankOpen,
+      layers: cloneLayers(store.layers),
+      electionResult: store.electionResult,
+      method: store.method,
+      numWinners: store.numWinners,
+    };
+  }
+
+  function applyState(s) {
+    untrack(() => {
+      store.activeTab = s.activeTab;
+      store.surveyXAxis = s.surveyXAxis;
+      store.surveyYAxis = s.surveyYAxis;
+      store.surveyRankings = s.surveyRankings;
+      store.surveyXRankOpen = s.surveyXRankOpen;
+      store.surveyYRankOpen = s.surveyYRankOpen;
+      store.layers = s.layers;
+      store.electionResult = s.electionResult;
+      store.method = s.method;
+      store.numWinners = s.numWinners;
+    });
+  }
+
+  function blankTutorialState() {
+    return {
+      activeTab: 'survey',
+      surveyXAxis: null,
+      surveyYAxis: null,
+      surveyRankings: defaultRankings(),
+      surveyXRankOpen: false,
+      surveyYRankOpen: false,
+      layers: [],
+      electionResult: null,
+      method: store.method,
+      numWinners: store.numWinners,
+    };
+  }
+
+  function enterWalkthrough() {
+    userSnapshot = captureState();
+    applyState(tutorialSnapshot ?? blankTutorialState());
+  }
+
+  function exitWalkthrough() {
+    tutorialSnapshot = captureState();
+    if (userSnapshot) applyState(userSnapshot);
+    userSnapshot = null;
+  }
+
+  $effect.pre(() => {
+    if (isWalkthrough) {
+      if (!userSnapshot) enterWalkthrough();
+    } else {
+      if (userSnapshot) exitWalkthrough();
+    }
+  });
+
   let activeLayers = $derived(
-    store.tutorialMode ? (tutorialStep?.layers ?? []) : store.layers
+    store.tutorialMode && !isWalkthrough ? (tutorialStep?.layers ?? []) : store.layers
   );
 
   let activeElectionResult = $derived(
-    store.tutorialMode ? (tutorialStep?.electionResult ?? null) : store.electionResult
+    store.tutorialMode && !isWalkthrough ? (tutorialStep?.electionResult ?? null) : store.electionResult
   );
 
   let centerPreview = $derived(!store.tutorialMode && store.activeTab === 'synthetic' && store.distribution !== null ? {
@@ -519,7 +613,7 @@
 
 <div class="app">
   <div class="toolbar">
-    <div class="toolbar-left" style:visibility={store.tutorialMode ? 'hidden' : 'visible'}>
+    <div class="toolbar-left" style:visibility={store.tutorialMode && !isWalkthrough ? 'hidden' : 'visible'}>
       <button
         class="toolbar-btn"
         class:active={store.addMode === 'voter'}
@@ -533,6 +627,7 @@
         class:active={store.addMode === 'candidate'}
         disabled={store.activeTab === 'survey' && !(store.surveyXAxis && store.surveyYAxis && store.surveyXAxis !== store.surveyYAxis)}
         title="Add candidate (press c)"
+        data-walkthrough="add-candidate-btn"
         onclick={() => toggleAddMode('candidate')}>
         +candidate <span class="kbd">c</span>
       </button>
@@ -545,7 +640,7 @@
         {store.tutorialMode ? '✕ exit tutorial' : '? tutorial'}
       </button>
     </div>
-    <div class="toolbar-right" style:visibility={store.tutorialMode ? 'hidden' : 'visible'}>
+    <div class="toolbar-right" style:visibility={store.tutorialMode && !isWalkthrough ? 'hidden' : 'visible'}>
       <button class="toolbar-btn" onclick={clearAll}>clear</button>
       <button class="toolbar-btn" onclick={triggerImport} title="Import a previously exported JSON file">import</button>
       <button class="toolbar-btn" onclick={exportData}>export</button>
@@ -586,7 +681,7 @@
 
     <div class="resize-handle" onmousedown={onResizeStart}></div>
 
-    {#if store.tutorialMode}
+    {#if store.tutorialMode && !isWalkthrough}
       <div class="right-panel" style:width="{panelWidth}px">
         <TutorialPanel onExit={() => { store.tutorialMode = false; }} />
       </div>
@@ -610,6 +705,10 @@
     {/if}
   </div>
 </div>
+
+{#if isWalkthrough}
+  <WalkthroughOverlay onExit={() => { store.tutorialMode = false; }} />
+{/if}
 
 {#if profilingOpen}
   {@const editLayer = editingCandidateId ? store.layers.find(l => l.id === editingCandidateId) : null}
@@ -675,6 +774,17 @@
 <style>
   :global(*, *::before, *::after) { box-sizing: border-box; margin: 0; padding: 0; }
   :global(body) { font-family: sans-serif; background: #F5F0E8; overflow: hidden; }
+  :global(.walkthrough-highlight) {
+    outline: 3px solid #C96442 !important;
+    outline-offset: 2px;
+    box-shadow:
+      inset 0 0 0 3px #C96442,
+      inset 0 0 0 9px rgba(201,100,66,0.14),
+      0 0 0 6px rgba(201,100,66,0.25);
+    position: relative;
+    z-index: 1000;
+    transition: outline-color 0.15s, box-shadow 0.15s;
+  }
 
   .app { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
 
