@@ -251,9 +251,14 @@
 
     if (showCandidates) {
       const winnerIds = new Set();
+      const winnerPositions = [];
       if (electionResult) {
         for (const l of electionResult) {
-          for (const p of l.points) if (p.winner) winnerIds.add(p.id);
+          for (const p of l.points) {
+            if (!p.winner) continue;
+            if (p.id !== undefined) winnerIds.add(p.id);
+            else winnerPositions.push({ x: p.x, y: p.y });
+          }
         }
       }
       for (const layer of layers.filter(l => l.visible && l.type === 'candidate')) {
@@ -261,7 +266,8 @@
         const fill = layer.color ?? '#C8983A';
         const stroke = d3.color(fill)?.darker(0.6).formatHex() ?? '#8E6A22';
         layer.points.forEach((p, i) => {
-          const isWinner = winnerIds.has(`${layer.id}-${i}`);
+          const isWinner = winnerIds.has(`${layer.id}-${i}`) ||
+            winnerPositions.some(w => Math.abs(w.x - p.x) < 1e-9 && Math.abs(w.y - p.y) < 1e-9);
           const cx = xScale(p.x), cy = yScale(p.y);
           const sz = isWinner ? 14 : (lit ? 14 : 10);
           g.append('path')
@@ -287,6 +293,24 @@
               .attr('fill', '#C96442')
               .attr('pointer-events', 'none')
               .text('winner');
+          }
+          {
+            const m = /Candidate\s+([A-Z])/i.exec(layer.label ?? '');
+            const letter = m ? m[1].toUpperCase() : null;
+            if (letter) {
+              g.append('text')
+                .attr('x', cx + sz + 5).attr('y', cy + 5)
+                .attr('text-anchor', 'start')
+                .attr('font-size', '14px')
+                .attr('font-family', "Georgia, 'Times New Roman', serif")
+                .attr('font-weight', '700')
+                .attr('fill', '#2D2B27')
+                .attr('stroke', '#F5F0E8')
+                .attr('stroke-width', 3)
+                .attr('paint-order', 'stroke')
+                .attr('pointer-events', 'none')
+                .text(letter);
+            }
           }
         });
       }

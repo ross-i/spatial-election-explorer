@@ -113,36 +113,6 @@ export const TUTORIALS = [
     ],
   },
   {
-    title: 'Borda Count',
-    subtitle: 'Rewarding broad appeal',
-    steps: [
-      {
-        heading: 'The same voters — but now they rank all candidates',
-        content: [
-          `Three candidates are spread across the policy space: A on the left, B in the center, C on the right. Each voter group is roughly the same size.`,
-          `Under Borda Count, voters rank all candidates. A candidate earns 2 points for each first-place ranking, 1 for second, and 0 for last. The highest total wins.`,
-          `With three equally-sized blocs, who has the broadest appeal?`,
-        ],
-        layers: bordaLayers,
-        electionResult: null,
-      },
-      {
-        heading: 'Candidate B wins — the consensus choice',
-        content: [
-          `The left bloc ranks A first, B second, C last. The right bloc ranks C first, B second, A last. The center bloc ranks B first.`,
-          `Candidate B earns a second-place vote from nearly everyone — accumulating enough points to win, even without being anyone's passionate first choice.`,
-          `Borda Count tends to elect centrist "consensus" candidates. That can reduce polarization, but critics argue it underweights strong majority preferences.`,
-        ],
-        layers: bordaLayers,
-        electionResult: result([
-          { x: 0.18, y: 0.5, winner: false },
-          { x: 0.52, y: 0.5, winner: true  },
-          { x: 0.82, y: 0.5, winner: false },
-        ]),
-      },
-    ],
-  },
-  {
     title: 'Instant-Runoff (IRV)',
     subtitle: 'Eliminating the weakest, round by round',
     steps: [
@@ -168,6 +138,36 @@ export const TUTORIALS = [
           { x: 0.2,  y: 0.5,  winner: false },
           { x: 0.73, y: 0.37, winner: true  },
           { x: 0.68, y: 0.63, winner: false },
+        ]),
+      },
+    ],
+  },
+  {
+    title: 'Borda Count',
+    subtitle: 'Rewarding broad appeal',
+    steps: [
+      {
+        heading: 'The same voters — but now they rank all candidates',
+        content: [
+          `Three candidates are spread across the policy space: A on the left, B in the center, C on the right. Each voter group is roughly the same size.`,
+          `Under Borda Count, voters rank all candidates. A candidate earns 2 points for each first-place ranking, 1 for second, and 0 for last. The highest total wins.`,
+          `With three equally-sized blocs, who has the broadest appeal?`,
+        ],
+        layers: bordaLayers,
+        electionResult: null,
+      },
+      {
+        heading: 'Candidate B wins — the consensus choice',
+        content: [
+          `The left bloc ranks A first, B second, C last. The right bloc ranks C first, B second, A last. The center bloc ranks B first.`,
+          `Candidate B earns a second-place vote from nearly everyone — accumulating enough points to win, even without being anyone's passionate first choice.`,
+          `Borda Count tends to elect centrist "consensus" candidates. That can reduce polarization, but critics argue it underweights strong majority preferences.`,
+        ],
+        layers: bordaLayers,
+        electionResult: result([
+          { x: 0.18, y: 0.5, winner: false },
+          { x: 0.52, y: 0.5, winner: true  },
+          { x: 0.82, y: 0.5, winner: false },
         ]),
       },
     ],
