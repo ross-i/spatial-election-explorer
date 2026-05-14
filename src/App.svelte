@@ -259,15 +259,26 @@
       alert(`Cannot pick ${requested} winners from only ${candidateCount} candidate${candidateCount === 1 ? '' : 's'}.`);
       return;
     }
+    const myToken = ++generationToken;
     store.isGenerating = true;
     try {
-      store.electionResult = await run_election(bundle, store.method, requested);
+      const result = await run_election(bundle, store.method, requested);
+      if (myToken !== generationToken) return; // user canceled — drop the stale result
+      store.electionResult = result;
     } finally {
-      store.isGenerating = false;
+      if (myToken === generationToken) store.isGenerating = false;
     }
   }
 
+  let generationToken = 0;
+  function cancelGeneration() {
+    if (!store.isGenerating) return;
+    generationToken++;
+    store.isGenerating = false;
+  }
+
   function clearAll() {
+    cancelGeneration();
     store.layers = [];
     store.electionResult = null;
     store.addMode = null;
@@ -772,6 +783,7 @@
         <div class="data-area">
           <DataPointsList
             onGenerate={generateElection}
+            onCancel={cancelGeneration}
             onDelete={deleteLayer}
             onToggleVisibility={toggleLayerVisibility}
             onStartEdit={startEditLayer}
