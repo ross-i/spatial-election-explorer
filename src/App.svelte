@@ -20,7 +20,6 @@
   let selectedPoint = $state(null);
   let profilingOpen = $state(false);
   let editingCandidateId = $state(null);
-  let pendingTab = $state(null);
 
   function handlePointClick(data) { selectedPoint = data; }
   function closePopup() { selectedPoint = null; }
@@ -260,15 +259,26 @@
       alert(`Cannot pick ${requested} winners from only ${candidateCount} candidate${candidateCount === 1 ? '' : 's'}.`);
       return;
     }
+    const myToken = ++generationToken;
     store.isGenerating = true;
     try {
-      store.electionResult = await run_election(bundle, store.method, requested);
+      const result = await run_election(bundle, store.method, requested);
+      if (myToken !== generationToken) return; // user canceled — drop the stale result
+      store.electionResult = result;
     } finally {
-      store.isGenerating = false;
+      if (myToken === generationToken) store.isGenerating = false;
     }
   }
 
+  let generationToken = 0;
+  function cancelGeneration() {
+    if (!store.isGenerating) return;
+    generationToken++;
+    store.isGenerating = false;
+  }
+
   function clearAll() {
+    cancelGeneration();
     store.layers = [];
     store.electionResult = null;
     store.addMode = null;
@@ -277,24 +287,88 @@
     store.surveyYAxis = null;
   }
 
-  function handleSwitchTab(tab) {
-    if (tab === store.activeTab) return;
-    if (store.layers.length === 0) {
-      store.activeTab = tab;
-      store.editingLayerId = null;
-    } else {
-      pendingTab = tab;
-    }
+  // Per-tab session caches: switching tabs preserves the work in each tab
+  // rather than erasing. Each entry holds the data the other tab doesn't care
+  // about (layers, axes, distribution params, etc.) keyed by activeTab.
+  const tabSnapshots = { synthetic: null, survey: null };
+
+  function captureTabState() {
+    return {
+      layers: cloneLayers(store.layers),
+      electionResult: store.electionResult,
+      editingLayerId: store.editingLayerId,
+      surveyXAxis: store.surveyXAxis,
+      surveyYAxis: store.surveyYAxis,
+      surveyRankings: store.surveyRankings ? { ...store.surveyRankings } : store.surveyRankings,
+      surveyXRankOpen: store.surveyXRankOpen,
+      surveyYRankOpen: store.surveyYRankOpen,
+      distribution: store.distribution,
+      centerX: store.centerX,
+      centerY: store.centerY,
+      stdDev: store.stdDev,
+      rectWidth: store.rectWidth,
+      rectHeight: store.rectHeight,
+      discRadius: store.discRadius,
+      pointType: store.pointType,
+      count: store.count,
+      method: store.method,
+      numWinners: store.numWinners,
+    };
   }
 
-  function confirmSwitchTab() {
-    store.layers = [];
-    store.electionResult = null;
-    store.editingLayerId = null;
-    store.surveyXAxis = null;
-    store.surveyYAxis = null;
-    store.activeTab = pendingTab;
-    pendingTab = null;
+  function applyTabState(s) {
+    untrack(() => {
+      store.layers = s.layers;
+      store.electionResult = s.electionResult;
+      store.editingLayerId = s.editingLayerId;
+      store.surveyXAxis = s.surveyXAxis;
+      store.surveyYAxis = s.surveyYAxis;
+      store.surveyRankings = s.surveyRankings;
+      store.surveyXRankOpen = s.surveyXRankOpen;
+      store.surveyYRankOpen = s.surveyYRankOpen;
+      store.distribution = s.distribution;
+      store.centerX = s.centerX;
+      store.centerY = s.centerY;
+      store.stdDev = s.stdDev;
+      store.rectWidth = s.rectWidth;
+      store.rectHeight = s.rectHeight;
+      store.discRadius = s.discRadius;
+      store.pointType = s.pointType;
+      store.count = s.count;
+      store.method = s.method;
+      store.numWinners = s.numWinners;
+    });
+  }
+
+  function blankTabState() {
+    return {
+      layers: [],
+      electionResult: null,
+      editingLayerId: null,
+      surveyXAxis: null,
+      surveyYAxis: null,
+      surveyRankings: defaultRankings(),
+      surveyXRankOpen: false,
+      surveyYRankOpen: false,
+      distribution: null,
+      centerX: 0.5,
+      centerY: 0.5,
+      stdDev: 0.1,
+      rectWidth: 0.3,
+      rectHeight: 0.3,
+      discRadius: 0.2,
+      pointType: 'voter',
+      count: 20,
+      method: store.method,
+      numWinners: store.numWinners,
+    };
+  }
+
+  function handleSwitchTab(tab) {
+    if (tab === store.activeTab) return;
+    tabSnapshots[store.activeTab] = captureTabState();
+    store.activeTab = tab;
+    applyTabState(tabSnapshots[tab] ?? blankTabState());
   }
 
   function exportData() {
@@ -709,6 +783,7 @@
         <div class="data-area">
           <DataPointsList
             onGenerate={generateElection}
+            onCancel={cancelGeneration}
             onDelete={deleteLayer}
             onToggleVisibility={toggleLayerVisibility}
             onStartEdit={startEditLayer}
@@ -737,22 +812,6 @@
     initialName={editProfile ? (_name ?? '') : null}
     onLiveUpdate={editingCandidateId ? liveUpdateCandidate : null}
   />
-{/if}
-
-{#if pendingTab !== null}
-  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-  <div class="popup-backdrop" onclick={() => pendingTab = null}>
-    <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-    <div class="tab-confirm-modal" onclick={e => e.stopPropagation()}>
-      <div class="tab-confirm-body">
-        <p class="tab-confirm-msg">Data cannot transfer between tabs as the axes may not align. Do you want to reset the data and plot so you can work in the <strong>{pendingTab}</strong> tab?</p>
-      </div>
-      <div class="tab-confirm-btns">
-        <button class="tab-confirm-cancel" onclick={() => pendingTab = null}>No, return to {store.activeTab}</button>
-        <button class="tab-confirm-ok" onclick={confirmSwitchTab}>Yes, erase data</button>
-      </div>
-    </div>
-  </div>
 {/if}
 
 {#if selectedPoint}

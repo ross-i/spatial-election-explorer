@@ -53,7 +53,7 @@ export function winnerSet(electionResult) {
   const ids = new Set();
   for (const layer of electionResult) {
     for (const p of layer.points) {
-      if (p.winner) ids.add(p.id);
+      if (p.winner && p.id != null) ids.add(p.id);
     }
   }
   return ids;

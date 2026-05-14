@@ -114,9 +114,11 @@
   $effect(() => {
     void step;
     clearHighlight();
-    // Skip prep on the initial mount so re-entering the walkthrough doesn't
-    // wipe restored tutorial state. Run prep only when navigating between steps.
-    if (step?.prep && prevStep !== null) {
+    // Skip prep on initial mount so re-entering the walkthrough doesn't wipe
+    // restored tutorial state — UNLESS we land on step 0, which is meant to
+    // reset the tutorial canvas every time the user arrives at it.
+    const isFirstStep = store.activeTutorialStep === 0;
+    if (step?.prep && (prevStep !== null || isFirstStep)) {
       try { step.prep(store); } catch {}
     }
     prevStep = step;

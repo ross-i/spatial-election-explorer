@@ -15,6 +15,7 @@
 
   const {
     onGenerate,
+    onCancel,
     onDelete,
     onToggleVisibility,
     onStartEdit,
@@ -178,11 +179,21 @@
     />
     <button
       class="btn-generate"
-      onclick={onGenerate}
-      disabled={store.isGenerating}
+      class:cleared={(!!store.electionResult || store.isGenerating)}
+      onclick={() => {
+        if (store.isGenerating) {
+          onCancel?.();
+        } else if (store.electionResult) {
+          store.electionResult = null;
+        } else {
+          onGenerate();
+        }
+      }}
     >
       {#if store.isGenerating}
-        <span class="spinner"></span>running
+        <span class="spinner"></span>interrupt
+      {:else if store.electionResult}
+        clear results
       {:else}
         run election
       {/if}
@@ -379,6 +390,16 @@
   .btn-generate:hover:not(:disabled) {
     background: #b8634a;
   }
+  .btn-generate.cleared {
+    background: transparent;
+    color: #6b6560;
+    border: 1px solid #c0bab2;
+  }
+  .btn-generate.cleared:hover:not(:disabled) {
+    background: #ede8df;
+    color: #2d2b27;
+    border-color: #6b6560;
+  }
   .btn-generate:disabled {
     background: #c5a89e;
     cursor: not-allowed;
@@ -394,6 +415,10 @@
     border-top-color: #fff;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
+  }
+  .btn-generate.cleared .spinner {
+    border: 2px solid rgba(107, 101, 96, 0.3);
+    border-top-color: #6b6560;
   }
   @keyframes spin {
     to {
