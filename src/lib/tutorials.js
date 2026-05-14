@@ -215,7 +215,15 @@ export const TUTORIALS = [
           `The Survey tab is already open on the right. The plot stays empty until you pick what the two axes mean — let's do that next.`,
         ],
         target: '[data-walkthrough="survey-tab-btn"]',
-        prep: (s) => { s.activeTab = 'survey'; },
+        prep: (s) => {
+          s.activeTab = 'survey';
+          s.layers = [];
+          s.electionResult = null;
+          s.surveyXAxis = null;
+          s.surveyYAxis = null;
+          s.surveyXRankOpen = false;
+          s.surveyYRankOpen = false;
+        },
       },
       {
         heading: 'Pick an index for the X axis',
