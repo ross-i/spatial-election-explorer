@@ -35,6 +35,10 @@
     return "M" + pts.map((p) => p.join(",")).join("L") + "Z";
   }
 
+  function toggleHighlight(id) {
+    store.highlightedLayerId = store.highlightedLayerId === id ? null : id;
+  }
+
   let methodOptions = $derived(electionMethodsForNumWinners(store.numWinners));
 
   $effect(() => {
@@ -79,9 +83,16 @@
         class="layer-row"
         class:hidden={!layer.visible}
         class:highlighted={store.highlightedLayerId === layer.id}
-        onclick={() => {
-          store.highlightedLayerId =
-            store.highlightedLayerId === layer.id ? null : layer.id;
+        role="button"
+        tabindex="0"
+        aria-pressed={store.highlightedLayerId === layer.id}
+        aria-label={`Highlight ${layer.label}`}
+        onclick={() => toggleHighlight(layer.id)}
+        onkeydown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleHighlight(layer.id);
+          }
         }}
         style="cursor: pointer;"
       >
