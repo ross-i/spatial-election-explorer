@@ -35,6 +35,10 @@
     return "M" + pts.map((p) => p.join(",")).join("L") + "Z";
   }
 
+  function toggleHighlight(id) {
+    store.highlightedLayerId = store.highlightedLayerId === id ? null : id;
+  }
+
   let methodOptions = $derived(electionMethodsForNumWinners(store.numWinners));
 
   $effect(() => {
@@ -79,9 +83,16 @@
         class="layer-row"
         class:hidden={!layer.visible}
         class:highlighted={store.highlightedLayerId === layer.id}
-        onclick={() => {
-          store.highlightedLayerId =
-            store.highlightedLayerId === layer.id ? null : layer.id;
+        role="button"
+        tabindex="0"
+        aria-pressed={store.highlightedLayerId === layer.id}
+        aria-label={`Highlight ${layer.label}`}
+        onclick={() => toggleHighlight(layer.id)}
+        onkeydown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleHighlight(layer.id);
+          }
         }}
         style="cursor: pointer;"
       >
@@ -156,27 +167,34 @@
   </div>
 
   <div class="generate-row" data-walkthrough="run-election-row">
-    <select
-      bind:value={store.method}
-      class="method-select"
-      onchange={() => {
-        store.electionResult = null;
-      }}
-    >
-      {#each methodOptions as opt (opt.id)}
-        <option value={opt.id}>{opt.label}</option>
-      {/each}
-    </select>
-    <input
-      type="number"
-      class="winners-input"
-      min="1"
-      bind:value={store.numWinners}
-      title="# winners"
-      oninput={() => {
-        store.electionResult = null;
-      }}
-    />
+    <div class="control-field method-field">
+      <label class="control-label" for="method-select">Voting method</label>
+      <select
+        id="method-select"
+        bind:value={store.method}
+        class="method-select"
+        onchange={() => {
+          store.electionResult = null;
+        }}
+      >
+        {#each methodOptions as opt (opt.id)}
+          <option value={opt.id}>{opt.label}</option>
+        {/each}
+      </select>
+    </div>
+    <div class="control-field winners-field">
+      <label class="control-label" for="winners-input"># Winners</label>
+      <input
+        id="winners-input"
+        type="number"
+        class="winners-input"
+        min="1"
+        bind:value={store.numWinners}
+        oninput={() => {
+          store.electionResult = null;
+        }}
+      />
+    </div>
     <button
       class="btn-generate"
       class:cleared={(!!store.electionResult || store.isGenerating)}
@@ -348,15 +366,34 @@
   }
   .generate-row {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 6px;
     padding: 8px 10px;
     border-top: 1px solid #d5cfc6;
     background: #ede8df;
     flex-shrink: 0;
   }
-  .method-select {
+  .control-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .method-field {
     flex: 1;
+    min-width: 0;
+  }
+  .control-label {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 0.6rem;
+    font-weight: 600;
+    font-style: italic;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6b6560;
+    white-space: nowrap;
+  }
+  .method-select {
+    width: 100%;
     font-size: 12px;
     padding: 3px 4px;
     border: 1px solid #c0bab2;
