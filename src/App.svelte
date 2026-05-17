@@ -660,7 +660,7 @@
     store.tutorialMode && !isWalkthrough ? (tutorialStep?.electionResult ?? null) : store.electionResult
   );
 
-  let centerPreview = $derived(!store.tutorialMode && store.activeTab === 'synthetic' && store.distribution !== null ? {
+  let centerPreview = $derived((!store.tutorialMode || isWalkthrough) && store.activeTab === 'synthetic' && store.distribution !== null ? {
     x: Number(store.centerX),
     y: Number(store.centerY),
     distribution: store.distribution,
@@ -744,7 +744,7 @@
   </div>
 
   <div class="main">
-    <div class="plot-area">
+    <div class="plot-area" data-walkthrough="plot-area">
       {#if store.addMode}
         <div class="mode-bubble" role="status">
           <span class="mode-dot"></span>
@@ -798,7 +798,11 @@
 </div>
 
 {#if isWalkthrough}
-  <WalkthroughOverlay onExit={() => { store.tutorialMode = false; }} />
+  <WalkthroughOverlay
+    onExit={() => { store.tutorialMode = false; }}
+    onGenerateRandomCandidate={generateRandomCandidate}
+    onAddData={addData}
+  />
 {/if}
 
 {#if profilingOpen}
