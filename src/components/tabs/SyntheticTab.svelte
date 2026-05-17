@@ -56,10 +56,10 @@
   });
 </script>
 
-<div class="tab-content">
+<div class="tab-content" data-walkthrough="synthetic-config">
   <div class="field-group">
     <div class="field-label">Distribution</div>
-    <div class="dist-row">
+    <div class="dist-row" data-walkthrough="synthetic-dist-row">
       {#each DISTRIBUTIONS as d}
         <button
           class="dist-btn"
@@ -141,7 +141,7 @@
       </div>
     {/if}
 
-    <div class="field-group">
+    <div class="field-group" data-walkthrough="synthetic-type">
       <div class="field-label">Type</div>
       <div class="radio-row">
         <label><input type="radio" bind:group={store.pointType} value="voter"> Voter</label>

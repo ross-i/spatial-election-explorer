@@ -12,7 +12,7 @@
       <button
         class="tab-btn"
         class:active={store.activeTab === tab}
-        data-walkthrough={tab === 'survey' ? 'survey-tab-btn' : null}
+        data-walkthrough={tab === 'survey' ? 'survey-tab-btn' : 'synthetic-tab-btn'}
         onclick={() => onSwitchTab(tab)}>
         {tab.charAt(0).toUpperCase() + tab.slice(1)}
       </button>
@@ -37,6 +37,7 @@
     {#if store.activeTab !== 'survey' || store.editingLayerId}
       <button
         class="btn-add"
+        data-walkthrough="add-data-btn"
         onclick={onAddData}
       >
         {store.editingLayerId ? 'update' : 'add data'}

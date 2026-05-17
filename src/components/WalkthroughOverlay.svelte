@@ -3,7 +3,7 @@
   import { TUTORIALS } from '../lib/tutorials.js';
   import { onMount } from 'svelte';
 
-  const { onExit } = $props();
+  const { onExit, onGenerateRandomCandidate, onAddData } = $props();
 
   const CARD_W = 380;
   const CARD_H_EST = 240;
@@ -30,6 +30,25 @@
   }
 
   function next() {
+    // Some steps backfill random candidates so the next step has data to work
+    // with. Only top up to the target — manually-added candidates count.
+    const target = step?.addRandomCandidatesOnNext;
+    if (target && onGenerateRandomCandidate) {
+      const have = store.layers.filter((l) => l.type === 'candidate').length;
+      for (let i = have; i < target; i++) onGenerateRandomCandidate();
+    }
+
+    // Some steps add the configured layer for the user when they click "next"
+    // — but only if they haven't already produced it themselves (advanceWhen
+    // already satisfied means a manual add / auto-advance, so skip to avoid
+    // duplicating).
+    if (step?.addDataOnNext && onAddData) {
+      const alreadyDone = (() => {
+        try { return step.advanceWhen ? !!step.advanceWhen(store) : false; }
+        catch { return false; }
+      })();
+      if (!alreadyDone) onAddData();
+    }
     if (store.activeTutorialStep < totalSteps - 1) {
       store.activeTutorialStep++;
     } else if (store.activeTutorialIdx < TUTORIALS.length - 1) {
@@ -38,24 +57,47 @@
     }
   }
 
-  let highlightedEl = null;
-  let targetRect = $state(null);
+  function selectTutorial(i) {
+    store.activeTutorialIdx = i;
+    store.activeTutorialStep = 0;
+  }
+
+  let highlightedEl = null;       // primary target — drives card placement
+  let extraEls = [];              // extra highlighted regions (e.g. the plot)
+  let targetRect = $state(null);  // primary rect (card placement)
+  let holeRects = $state([]);     // every un-dimmed rect (primary + extras)
   let cardTop = $state(null);
   let cardLeft = $state(null);
+  let vw = $state(typeof window !== 'undefined' ? window.innerWidth : 0);
+  let vh = $state(typeof window !== 'undefined' ? window.innerHeight : 0);
 
   function clearHighlight() {
     if (highlightedEl) {
       highlightedEl.classList.remove('walkthrough-highlight');
       highlightedEl = null;
     }
+    for (const el of extraEls) el?.classList.remove('walkthrough-highlight');
+    extraEls = [];
     targetRect = null;
+    holeRects = [];
     cardTop = null;
     cardLeft = null;
   }
 
+  function rectOf(el) {
+    const r = el.getBoundingClientRect();
+    return { top: r.top, left: r.left, width: r.width, height: r.height };
+  }
+
   function recompute() {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    vw = window.innerWidth;
+    vh = window.innerHeight;
+
+    // Every highlighted element stays un-dimmed and interactive.
+    const rects = [];
+    if (highlightedEl) rects.push(rectOf(highlightedEl));
+    for (const el of extraEls) if (el) rects.push(rectOf(el));
+    holeRects = rects;
 
     if (!highlightedEl) {
       targetRect = null;
@@ -122,17 +164,23 @@
       try { step.prep(store); } catch {}
     }
     prevStep = step;
-    if (step?.target) {
+    if (step?.target || step?.extraTargets) {
       requestAnimationFrame(() => {
-        const el = document.querySelector(step.target);
-        if (el) {
-          el.classList.add('walkthrough-highlight');
-          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          highlightedEl = el;
-          requestAnimationFrame(recompute);
-        } else {
-          recompute();
+        if (step?.target) {
+          const el = document.querySelector(step.target);
+          if (el) {
+            el.classList.add('walkthrough-highlight');
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            highlightedEl = el;
+          }
         }
+        if (step?.extraTargets) {
+          extraEls = step.extraTargets
+            .map((sel) => document.querySelector(sel))
+            .filter(Boolean);
+          for (const ex of extraEls) ex.classList.add('walkthrough-highlight');
+        }
+        requestAnimationFrame(recompute);
       });
     } else {
       recompute();
@@ -140,51 +188,69 @@
     return clearHighlight;
   });
 
-  // Auto-advance when the step's advanceWhen(store) becomes true. Skip the
-  // very first run after the step changes so prep-set state can't trip it.
-  let armedForStep = null;
+  // Auto-advance when the step's advanceWhen(store) flips to true while we're
+  // on that step. We only "arm" once the condition is currently false, so a
+  // step entered with its condition already satisfied (prep, or data added on
+  // an earlier visit, or arriving via prev) does NOT snap forward — letting
+  // the user read it and navigate back freely.
+  let advanceStep = null;   // which step object the arm state belongs to
+  let advanceArmed = false;
   $effect(() => {
     const s = step;
+    // Re-arm on every step change, even steps without advanceWhen, so the
+    // arm state never leaks across navigation.
+    if (advanceStep !== s) {
+      advanceStep = s;
+      advanceArmed = false;
+    }
     if (!s?.advanceWhen) return;
     const ready = (() => { try { return !!s.advanceWhen(store); } catch { return false; } })();
-    if (armedForStep !== s) {
-      armedForStep = s;
-      if (ready) return; // prep already satisfies it — wait for it to flip
+    if (!advanceArmed) {
+      if (!ready) advanceArmed = true; // arm only once the condition is unmet
+      return;
     }
     if (ready) next();
   });
 
-  // Dim rectangles around target (or full-screen when no target)
-  let dimRects = $derived.by(() => {
-    const vw = typeof window !== 'undefined' ? window.innerWidth : 0;
-    const vh = typeof window !== 'undefined' ? window.innerHeight : 0;
-    if (!targetRect) {
-      return [{ top: 0, left: 0, width: vw, height: vh }];
-    }
-    const t = targetRect;
-    const pad = 10;
-    const tx = Math.max(0, t.left - pad);
-    const ty = Math.max(0, t.top - pad);
-    const tw = Math.min(vw, t.left + t.width + pad) - tx;
-    const th = Math.min(vh, t.top + t.height + pad) - ty;
-    return [
-      { top: 0, left: 0, width: vw, height: ty },
-      { top: ty + th, left: 0, width: vw, height: Math.max(0, vh - (ty + th)) },
-      { top: ty, left: 0, width: tx, height: th },
-      { top: ty, left: tx + tw, width: Math.max(0, vw - (tx + tw)), height: th },
-    ];
-  });
+  const HOLE_PAD = 10;
 </script>
 
 {#if step}
-  {#each dimRects as r}
-    <div class="wt-dim" style="top:{r.top}px; left:{r.left}px; width:{r.width}px; height:{r.height}px;"></div>
-  {/each}
+  <svg class="wt-dim-svg" style="width:{vw}px; height:{vh}px;">
+    <defs>
+      <mask id="wt-dim-mask">
+        <rect x="0" y="0" width={vw} height={vh} fill="white" />
+        {#each holeRects as h}
+          <rect
+            x={Math.max(0, h.left - HOLE_PAD)}
+            y={Math.max(0, h.top - HOLE_PAD)}
+            width={h.width + HOLE_PAD * 2}
+            height={h.height + HOLE_PAD * 2}
+            rx="6"
+            fill="black" />
+        {/each}
+      </mask>
+    </defs>
+    <rect
+      class="wt-dim-fill"
+      x="0" y="0" width={vw} height={vh}
+      fill="rgba(15,12,10,0.45)"
+      mask="url(#wt-dim-mask)" />
+  </svg>
 
   {#if cardTop !== null && cardLeft !== null}
     <div class="walkthrough-card" style="top:{cardTop}px; left:{cardLeft}px; width:{CARD_W}px;">
       <div class="wt-meta">
-        <span class="wt-chapter">{current.title}</span>
+        <select
+          class="wt-jump"
+          aria-label="Jump to tutorial"
+          value={store.activeTutorialIdx}
+          onchange={(e) => selectTutorial(Number(e.currentTarget.value))}
+        >
+          {#each TUTORIALS as t, i}
+            <option value={i}>{t.title}</option>
+          {/each}
+        </select>
         <span class="wt-sep">·</span>
         <span class="wt-step-label">Step {store.activeTutorialStep + 1} of {totalSteps}</span>
       </div>
@@ -208,12 +274,16 @@
 {/if}
 
 <style>
-  .wt-dim {
+  .wt-dim-svg {
     position: fixed;
-    background: rgba(15, 12, 10, 0.45);
+    top: 0;
+    left: 0;
     z-index: 999;
-    pointer-events: auto;
+    pointer-events: none;
   }
+  /* Re-enable hit-testing only where the dim is actually painted, so the
+     un-dimmed holes (target + plot) pass clicks through to the app. */
+  .wt-dim-fill { pointer-events: visiblePainted; }
   .walkthrough-card {
     position: fixed;
     background: #FAF7F2;
@@ -225,13 +295,37 @@
     z-index: 1001;
   }
   .wt-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-  .wt-chapter {
+  .wt-jump {
     font-size: 0.65rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: #C96442;
     font-family: Georgia, 'Times New Roman', serif;
     font-style: italic;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    margin-left: -5px;
+    padding: 1px 17px 1px 5px;
+    max-width: 230px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='%23C96442'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 5px center;
+    background-size: 7px;
+    transition: background-color 0.1s, border-color 0.1s;
+  }
+  .wt-jump:hover { background-color: #F1ECE4; border-color: #C0BAB2; }
+  .wt-jump:focus { outline: none; border-color: #C96442; }
+  /* Dropdown items use the browser's normal (readable) styling */
+  .wt-jump option {
+    color: #2D2B27;
+    font-family: sans-serif;
+    font-style: normal;
+    text-transform: none;
+    letter-spacing: normal;
   }
   .wt-sep { color: #C0BAB2; font-size: 12px; }
   .wt-step-label {

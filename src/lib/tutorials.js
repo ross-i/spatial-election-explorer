@@ -204,6 +204,117 @@ export const TUTORIALS = [
     ],
   },
   {
+    title: 'Synthetic Mode',
+    subtitle: 'Build an electorate from scratch',
+    walkthrough: true,
+    steps: [
+      {
+        heading: 'Welcome to the Synthetic tab',
+        content: [
+          `The five tutorials so far used fixed scenarios. The Synthetic tab hands the design to you: instead of placing points one by one, you describe a cluster with a statistical distribution and the tool samples it onto the policy space.`,
+          `The Synthetic tab is already open on the right. The plot stays empty until you describe and add a batch of points — let's build one.`,
+        ],
+        target: '[data-walkthrough="synthetic-tab-btn"]',
+        prep: (s) => {
+          s.activeTab = 'synthetic';
+          s.layers = [];
+          s.electionResult = null;
+          s.distribution = null;
+          s.editingLayerId = null;
+          s.pointType = 'voter';
+        },
+      },
+      {
+        heading: 'Choose a distribution',
+        content: [
+          `A distribution is the shape the sampled points fall into. Gaussian clusters them tightly around a center; Uniform Rect spreads them evenly across a box; Uniform Disc fills a circle.`,
+          `Pick one of the three — we'll move on as soon as you do.`,
+        ],
+        target: '[data-walkthrough="synthetic-dist-row"]',
+        prep: (s) => {
+          s.activeTab = 'synthetic';
+          s.distribution = null;
+        },
+        advanceWhen: (s) => !!s.distribution,
+      },
+      {
+        heading: 'Shape and position the cluster',
+        content: [
+          `With a distribution chosen, the parameter controls appear. The spread control — standard deviation, width/height, or radius depending on the distribution — sets how tightly the points pack.`,
+          `Watch the plot on the left: a live preview traces the cluster as you adjust. For a Gaussian, the nested dashed rings mark one, two, and three standard deviations out from the center, so you can see exactly how far the spread reaches.`,
+          `You don't have to type coordinates to place it — grab the crosshair at the center and drag the whole distribution anywhere on the plot. (The "select" button and the (x, y) inputs do the same thing if you'd rather be precise.)`,
+        ],
+        target: '[data-walkthrough="synthetic-config"]',
+        extraTargets: ['[data-walkthrough="plot-area"]'],
+        prep: (s) => {
+          s.activeTab = 'synthetic';
+          if (!s.distribution) s.distribution = 'gaussian';
+        },
+      },
+      {
+        heading: 'Voters or candidates, and how many',
+        content: [
+          `Every batch is either a bloc of voters or a set of candidates — the "Type" toggle decides which. "Count" sets how many points this batch drops onto the plot.`,
+          `You'll need both kinds in the space before an election means anything: candidates to vote for, and voters to do the voting.`,
+        ],
+        target: '[data-walkthrough="synthetic-type"]',
+        prep: (s) => {
+          s.activeTab = 'synthetic';
+          if (!s.distribution) s.distribution = 'gaussian';
+          s.pointType = 'voter';
+          s.count = 50;
+        },
+      },
+      {
+        heading: 'Add a bloc of voters',
+        content: [
+          `With "Voter" selected, click "add data" to commit the current settings as a voter layer. It shows up in the Data Points list, where you can hide, edit, or delete it.`,
+          `An election needs voters and candidates both — let's add the voters first. Or just click "next" and we'll add this voter bloc for you.`,
+        ],
+        target: '[data-walkthrough="add-data-btn"]',
+        extraTargets: ['[data-walkthrough="plot-area"]'],
+        addDataOnNext: true,
+        prep: (s) => {
+          s.activeTab = 'synthetic';
+          if (!s.distribution) s.distribution = 'gaussian';
+          s.pointType = 'voter';
+          s.count = 50;
+        },
+        advanceWhen: (s) => s.layers.some((l) => l.type === 'voter'),
+      },
+      {
+        heading: 'Now add some candidates',
+        content: [
+          `Repeat the recipe for candidates: the "Type" toggle has been switched to "Candidate". Aim the cluster wherever you want the contenders to stand — a small spread and a low count works well — then click "add data" again.`,
+          `Voters pick the nearest candidate, so where you place these decides the race. Or just click "next" and we'll add this candidate batch for you.`,
+        ],
+        target: '[data-walkthrough="add-data-btn"]',
+        extraTargets: ['[data-walkthrough="plot-area"]'],
+        addDataOnNext: true,
+        prep: (s) => {
+          s.activeTab = 'synthetic';
+          if (!s.distribution) s.distribution = 'gaussian';
+          s.pointType = 'candidate';
+          s.count = 5;
+        },
+        advanceWhen: (s) => s.layers.some((l) => l.type === 'candidate'),
+      },
+      {
+        heading: 'Run the election',
+        content: [
+          `Now that voters and candidates are both on the plot, pick a voting rule from the dropdown and click "run election." The winners are highlighted — the same payoff as the earlier tutorials, but on an electorate you designed.`,
+          `That's the full loop: describe clusters, place voters and candidates, and compare rules. Click "back to explorer" whenever you want to experiment freely, or continue to see the same idea with real survey data.`,
+        ],
+        target: '[data-walkthrough="run-election-row"]',
+        extraTargets: ['[data-walkthrough="plot-area"]'],
+        prep: (s) => {
+          s.activeTab = 'synthetic';
+          if (!s.distribution) s.distribution = 'gaussian';
+        },
+      },
+    ],
+  },
+  {
     title: 'Survey Mode',
     subtitle: 'From hypothetical voters to real respondents',
     walkthrough: true,
@@ -272,13 +383,16 @@ export const TUTORIALS = [
         content: [
           `With both axes set, you can populate the plot with candidates. "Random Candidate" samples a real respondent from the survey and drops them in with their full profile attached. "Profile Candidate" lets you answer the survey yourself to place a custom candidate.`,
           `Click any candidate dot to see the survey answers behind their position — a small profile card opens.`,
+          `Add a few yourself, or just click "next" and we'll drop in three random candidates so the election has something to work with.`,
         ],
         target: '[data-walkthrough="survey-candidate-btns"]',
+        addRandomCandidatesOnNext: 3,
         prep: (s) => {
           s.activeTab = 'survey';
           if (!s.surveyXAxis) s.surveyXAxis = 'gov';
           if (!s.surveyYAxis || s.surveyYAxis === s.surveyXAxis) s.surveyYAxis = 'social';
         },
+        advanceWhen: (s) => s.layers.filter((l) => l.type === 'candidate').length >= 3,
       },
       {
         heading: 'Run the election',
