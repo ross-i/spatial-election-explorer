@@ -451,6 +451,7 @@
   function onWindowKeydown(e) {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (isTypingTarget(e.target)) return;
+    if (e.key === 'Escape' && selectedPoint) { e.preventDefault(); closePopup(); return; }
     if (store.tutorialMode) return;
     const k = e.key.toLowerCase();
     if (k === 'v') {
@@ -693,6 +694,14 @@
     window.addEventListener('mouseup', onMouseUp);
   }
 
+  function onResizeKey(e) {
+    const STEP = 16;
+    if (e.key === 'ArrowLeft') { panelWidth = Math.min(700, panelWidth + STEP); e.preventDefault(); }
+    else if (e.key === 'ArrowRight') { panelWidth = Math.max(260, panelWidth - STEP); e.preventDefault(); }
+    else if (e.key === 'Home') { panelWidth = 700; e.preventDefault(); }
+    else if (e.key === 'End') { panelWidth = 260; e.preventDefault(); }
+  }
+
   function popupTitle(pt) {
     if (pt._name !== undefined) return pt._name || 'Candidate';
     return `Respondent #${pt.id}`;
@@ -769,7 +778,18 @@
       />
     </div>
 
-    <div class="resize-handle" onmousedown={onResizeStart}></div>
+    <div
+      class="resize-handle"
+      role="slider"
+      aria-orientation="vertical"
+      aria-label="Resize side panel"
+      aria-valuemin={260}
+      aria-valuemax={700}
+      aria-valuenow={panelWidth}
+      tabindex="0"
+      onmousedown={onResizeStart}
+      onkeydown={onResizeKey}
+    ></div>
 
     {#if store.tutorialMode && !isWalkthrough}
       <div class="right-panel" style:width="{panelWidth}px">
@@ -819,10 +839,18 @@
 {/if}
 
 {#if selectedPoint}
-  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-  <div class="popup-backdrop" onclick={closePopup}>
-    <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-    <div class="popup" onclick={e => e.stopPropagation()}>
+  <div
+    class="popup-backdrop"
+    role="presentation"
+    onclick={(e) => { if (e.target === e.currentTarget) closePopup(); }}
+  >
+    <div
+      class="popup"
+      role="dialog"
+      aria-modal="true"
+      aria-label={popupTitle(selectedPoint)}
+      tabindex="-1"
+    >
       <div class="popup-header">
         <span class="popup-title">{popupTitle(selectedPoint)}</span>
         <button class="popup-close" onclick={closePopup}>✕</button>
@@ -952,27 +980,6 @@
   }
 
   .data-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-
-  .tab-confirm-modal {
-    background: #fff; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.22);
-    width: min(420px, 92vw); overflow: hidden;
-  }
-  .tab-confirm-body { padding: 20px 20px 12px; }
-  .tab-confirm-msg { font-size: 13px; line-height: 1.5; color: #2D2B27; }
-  .tab-confirm-btns {
-    display: flex; justify-content: flex-end; gap: 8px;
-    padding: 12px 16px; border-top: 1px solid #e5e7eb;
-  }
-  .tab-confirm-cancel {
-    padding: 6px 14px; border: 1px solid #C0BAB2; border-radius: 4px;
-    background: #FAF7F2; color: #2D2B27; cursor: pointer; font-size: 12px; font-weight: 500;
-  }
-  .tab-confirm-cancel:hover { background: #EDE8DF; }
-  .tab-confirm-ok {
-    padding: 6px 14px; border: none; border-radius: 4px;
-    background: #CC7857; color: #fff; cursor: pointer; font-size: 12px; font-weight: 600;
-  }
-  .tab-confirm-ok:hover { background: #B8634A; }
 
   .popup-backdrop {
     position: fixed; inset: 0; background: rgba(0,0,0,0.35);
