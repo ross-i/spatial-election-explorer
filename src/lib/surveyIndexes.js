@@ -131,6 +131,40 @@ export function rankingsToWeights(orderedCols) {
   return weights;
 }
 
+// Enumerate every achievable score for an index given current rankings.
+// Returns [{score, answers}] sorted ascending — first answer combo per unique score.
+export function computeAchievableScores(index, rankings) {
+  const orderedCols = rankings[index.id] ?? index.questions.map(q => q.col);
+  const weights = rankingsToWeights(orderedCols);
+  const questions = index.questions;
+  const seen = new Map();  // rounded int key -> {score, answers, count}
+
+  function enumerate(qIdx, answers, weightedSum) {
+    if (qIdx === questions.length) {
+      const key = Math.round(weightedSum * 1000);
+      if (!seen.has(key)) {
+        seen.set(key, { score: weightedSum, answers: { ...answers }, count: 1 });
+      } else {
+        const entry = seen.get(key);
+        entry.count++;
+        if (Math.random() < 1 / entry.count) entry.answers = { ...answers };
+      }
+      return;
+    }
+    const q = questions[qIdx];
+    const w = weights[q.col];
+    for (const [rawKey, val] of Object.entries(q.coding)) {
+      if (val === null) continue;
+      answers[q.col] = rawKey;
+      enumerate(qIdx + 1, answers, weightedSum + val * w);
+    }
+    delete answers[q.col];
+  }
+
+  enumerate(0, {}, 0);
+  return Array.from(seen.values()).sort((a, b) => a.score - b.score);
+}
+
 // Score a single respondent on one index given a weights map {col: weight}.
 // Returns null if the respondent has no valid answers for this index.
 export function scoreRespondent(respondent, index, weights) {

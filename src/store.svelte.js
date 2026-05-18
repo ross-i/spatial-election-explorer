@@ -40,6 +40,7 @@ class AppStore {
   activeTutorialStep = $state(0);
   surveyXRankOpen = $state(false);
   surveyYRankOpen = $state(false);
+  surveyWasDeleted = $state(false);
 }
 
 export const store = new AppStore();

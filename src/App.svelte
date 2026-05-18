@@ -19,7 +19,8 @@
 
   let selectedPoint = $state(null);
   let profilingOpen = $state(false);
-  let editingCandidateId = $state(null);
+  let openEditorIds = $state([]);
+  let focusedPanelId = $state(null);
 
   function handlePointClick(data) { selectedPoint = data; }
   function closePopup() { selectedPoint = null; }
@@ -96,6 +97,21 @@
 
     }
 
+    store.electionResult = null;
+  }
+
+  function rePlotSurvey() {
+    if (!store.surveyData) { alert('Survey data is still loading — please wait a moment.'); return; }
+    if (!store.surveyXAxis || !store.surveyYAxis) { alert('Please select both X and Y axes first.'); return; }
+    if (store.surveyXAxis === store.surveyYAxis) { alert('X and Y axes must be different indexes.'); return; }
+    const xIndex = INDEXES.find(i => i.id === store.surveyXAxis);
+    const yIndex = INDEXES.find(i => i.id === store.surveyYAxis);
+    const rankings = store.surveyRankings ?? defaultRankings();
+    const pts = surveyFromData(store.surveyData, xIndex, yIndex, rankings);
+    if (!pts.length) { alert('No respondents had valid answers for both selected indexes.'); return; }
+    const label = `Survey: ${xIndex.label} × ${yIndex.label} (${pts.length} respondents)`;
+    store.layers = [...store.layers, makeLayer('voter', pts, label, { kind: 'survey' }, VOTER_LAYER_COLOR)];
+    store.surveyWasDeleted = false;
     store.electionResult = null;
   }
 
@@ -176,11 +192,6 @@
 
   // --- Candidate generation (survey tab) ---
 
-  function nextSurveyCandidateColor() {
-    const n = store.layers.filter(l => l.type === 'candidate' && l.params?.kind === 'survey_candidate').length;
-    return layerColor(n);
-  }
-
   function candidatePosition(answers) {
     if (!store.surveyXAxis || !store.surveyYAxis || store.surveyXAxis === store.surveyYAxis) return { x: 0.5, y: 0.5 };
     const xIndex = INDEXES.find(i => i.id === store.surveyXAxis);
@@ -191,10 +202,10 @@
     return { x, y };
   }
 
-  function addCandidateLayer(answers, name) {
+  function addCandidateLayer(answers, name, color = CANDIDATE_LAYER_COLOR) {
     const { x, y } = candidatePosition(answers);
     const pt = { x, y, _profile: { ...answers, _name: name } };
-    store.layers = [...store.layers, makeLayer('candidate', [pt], name, { kind: 'survey_candidate' }, nextSurveyCandidateColor())];
+    store.layers = [...store.layers, makeLayer('candidate', [pt], name, { kind: 'survey_candidate' }, color)];
     store.electionResult = null;
   }
 
@@ -210,34 +221,53 @@
     addCandidateLayer(answers, `Random Candidate ${n}`);
   }
 
-  function finalizeProfile(answers, name) {
-    if (editingCandidateId) {
-      const { x, y } = candidatePosition(answers);
-      const pt = { x, y, _profile: { ...answers, _name: name } };
-      store.layers = store.layers.map(l =>
-        l.id === editingCandidateId ? { ...l, points: [pt], label: name } : l
-      );
-      store.electionResult = null;
-      editingCandidateId = null;
-    } else {
-      addCandidateLayer(answers, name || 'Candidate');
-    }
+  function finalizeProfile(answers, name, color) {
+    addCandidateLayer(answers, name || 'Candidate', color);
     profilingOpen = false;
+    if (focusedPanelId === 'new') focusedPanelId = openEditorIds.length > 0 ? openEditorIds[openEditorIds.length - 1] : null;
+  }
+
+  function openEditorPanel(id) {
+    if (!openEditorIds.includes(id)) {
+      openEditorIds = openEditorIds.length >= 3 ? [...openEditorIds.slice(1), id] : [...openEditorIds, id];
+    }
+    focusedPanelId = id;
+  }
+
+  function closeEditor(id) {
+    openEditorIds = openEditorIds.filter(x => x !== id);
+    if (focusedPanelId === id) {
+      focusedPanelId = openEditorIds.length > 0 ? openEditorIds[openEditorIds.length - 1] : (profilingOpen ? 'new' : null);
+    }
+  }
+
+  function finalizeEdit(candidateId, answers, name) {
+    const { x, y } = candidatePosition(answers);
+    const pt = { x, y, _profile: { ...answers, _name: name } };
+    store.layers = store.layers.map(l =>
+      l.id === candidateId ? { ...l, points: [pt], label: name } : l
+    );
+    store.electionResult = null;
+    closeEditor(candidateId);
   }
 
   function startEditCandidate(id) {
-    editingCandidateId = id;
-    profilingOpen = true;
+    openEditorPanel(id);
   }
 
-  function liveUpdateCandidate(answers) {
-    if (!editingCandidateId) return;
-    const layer = store.layers.find(l => l.id === editingCandidateId);
+  function renameCandidate(candidateId, name, color) {
+    store.layers = store.layers.map(l =>
+      l.id === candidateId ? { ...l, label: name, color } : l
+    );
+  }
+
+  function liveUpdateEdit(candidateId, answers) {
+    const layer = store.layers.find(l => l.id === candidateId);
     if (!layer) return;
     const { x, y } = candidatePosition(answers);
     const pt = { x, y, _profile: { ...answers, _name: layer.label } };
     store.layers = store.layers.map(l =>
-      l.id === editingCandidateId ? { ...l, points: [pt] } : l
+      l.id === candidateId ? { ...l, points: [pt] } : l
     );
     store.electionResult = null;
   }
@@ -285,6 +315,7 @@
     store.selectingCenter = false;
     store.surveyXAxis = null;
     store.surveyYAxis = null;
+    store.surveyWasDeleted = false;
   }
 
   // Per-tab session caches: switching tabs preserves the work in each tab
@@ -366,6 +397,7 @@
 
   function handleSwitchTab(tab) {
     if (tab === store.activeTab) return;
+    if (tab === 'synthetic') { openEditorIds = []; profilingOpen = false; focusedPanelId = null; }
     tabSnapshots[store.activeTab] = captureTabState();
     store.activeTab = tab;
     applyTabState(tabSnapshots[tab] ?? blankTabState());
@@ -411,9 +443,10 @@
     }
     if (store.addMode) {
       const type = store.addMode;
+
       const kind = type === 'candidate' && store.activeTab === 'survey' ? { kind: 'survey_candidate' } : null;
       const plotColor =
-        type === 'voter' ? VOTER_LAYER_COLOR : kind ? nextSurveyCandidateColor() : CANDIDATE_LAYER_COLOR;
+        type === 'voter' ? VOTER_LAYER_COLOR : CANDIDATE_LAYER_COLOR;
       store.layers = [...store.layers, makeLayer(
         type, [{ x, y }],
         `${type.charAt(0).toUpperCase() + type.slice(1)}(${x.toFixed(2)},${y.toFixed(2)})`,
@@ -472,10 +505,13 @@
   }
 
   function deleteLayer(id) {
+    const deleted = store.layers.find(l => l.id === id);
+    if (deleted?.params?.kind === 'survey') store.surveyWasDeleted = true;
     store.layers = store.layers.filter(l => l.id !== id);
     store.electionResult = null;
     if (store.highlightedLayerId === id) store.highlightedLayerId = null;
     if (store.editingLayerId === id) { store.editingLayerId = null; store.distribution = null; }
+    if (openEditorIds.includes(id)) closeEditor(id);
   }
 
   function toggleLayerVisibility(id) {
@@ -506,6 +542,23 @@
     (!store.tutorialMode || !!TUTORIALS[store.activeTutorialIdx]?.walkthrough) &&
     (store.addMode !== null || store.selectingCenter)
   );
+
+  // Delete position-placed survey candidates only when the axis topic actually changes
+  let _prevXAxis = store.surveyXAxis;
+  let _prevYAxis = store.surveyYAxis;
+  $effect(() => {
+    const xAxis = store.surveyXAxis;
+    const yAxis = store.surveyYAxis;
+    if (xAxis === _prevXAxis && yAxis === _prevYAxis) return;
+    _prevXAxis = xAxis;
+    _prevYAxis = yAxis;
+    untrack(() => {
+      store.layers = store.layers.filter(l =>
+        !(l.params?.kind === 'survey_candidate' && !l.points.some(p => p._profile))
+      );
+      store.electionResult = null;
+    });
+  });
 
   $effect(() => {
     const rankings = store.surveyRankings;
@@ -634,6 +687,12 @@
     };
   }
 
+  function exitTutorial() {
+    store.tutorialMode = false;
+    store.activeTutorialIdx = 0;
+    store.activeTutorialStep = 0;
+  }
+
   function enterWalkthrough() {
     userSnapshot = captureState();
     applyState(tutorialSnapshot ?? blankTutorialState());
@@ -719,7 +778,7 @@
         disabled={store.activeTab === 'survey'}
         title="Add voter (press v)"
         onclick={() => toggleAddMode('voter')}>
-        +voter <span class="kbd">v</span>
+        +voter<span class="kbd">v</span>
       </button>
       <button
         class="toolbar-btn"
@@ -728,14 +787,27 @@
         title="Add candidate (press c)"
         data-walkthrough="add-candidate-btn"
         onclick={() => toggleAddMode('candidate')}>
-        +candidate <span class="kbd">c</span>
+        +candidate<span class="kbd">c</span>
       </button>
     </div>
     <div class="toolbar-center">
+      {#if store.addMode}
+        <div class="mode-bubble" role="status">
+          <span class="mode-dot"></span>
+          <span>
+            {#if store.addMode === 'candidate' && store.activeTab === 'survey'}
+              <strong>Add candidate mode</strong> — click on the plot to place a candidate by position. <em>Note: candidates placed this way will be removed if you change the axis topics.</em>
+            {:else}
+              <strong>Add {store.addMode} mode</strong> — click on the plot to drop a {store.addMode}.
+            {/if}
+            <span class="mode-hint">Right-click (or press Esc) to exit.</span>
+          </span>
+        </div>
+      {/if}
       <button
         class="toolbar-btn tutorial-btn"
         class:active={store.tutorialMode}
-        onclick={() => { store.tutorialMode = !store.tutorialMode; }}>
+        onclick={() => { if (store.tutorialMode) exitTutorial(); else store.tutorialMode = true; }}>
         {store.tutorialMode ? '✕ exit tutorial' : '? tutorial'}
       </button>
     </div>
@@ -754,15 +826,6 @@
 
   <div class="main">
     <div class="plot-area" data-walkthrough="plot-area">
-      {#if store.addMode}
-        <div class="mode-bubble" role="status">
-          <span class="mode-dot"></span>
-          <span>
-            <strong>Add {store.addMode} mode</strong> — click on the plot to drop a {store.addMode}.
-            <span class="mode-hint">Right-click (or press Esc) to exit.</span>
-          </span>
-        </div>
-      {/if}
       <PlotCanvas
         layers={activeLayers}
         electionResult={activeElectionResult}
@@ -770,13 +833,48 @@
         showCandidates={store.showCandidates}
         {interactive}
         onPlotClick={handlePlotClick}
-        onPointClick={handlePointClick}
+        onPointClick={store.addMode ? null : handlePointClick}
         {centerPreview}
         highlightedLayerId={store.highlightedLayerId}
         onCenterMove={moveCenterTo}
         {axisInfo}
       />
     </div>
+
+    {#if profilingOpen || openEditorIds.length > 0}
+      <div class="profiler-col">
+        {#if profilingOpen}
+          <CandidateProfiler
+            panel={true}
+            active={focusedPanelId === 'new'}
+            onFocus={() => { focusedPanelId = 'new'; }}
+            onFinalize={finalizeProfile}
+            onCancel={() => { profilingOpen = false; if (focusedPanelId === 'new') focusedPanelId = openEditorIds.length > 0 ? openEditorIds[openEditorIds.length - 1] : null; }}
+            initialAnswers={null}
+            initialName={null}
+            onLiveUpdate={null}
+          />
+        {/if}
+        {#each openEditorIds as editorId}
+          {@const editLayer = store.layers.find(l => l.id === editorId)}
+          {@const editProfile = editLayer?.points[0]?._profile}
+          {@const { _name, ...editAnswers } = editProfile ?? { _name: undefined }}
+          <CandidateProfiler
+            panel={true}
+            active={focusedPanelId === editorId}
+            onFocus={() => { focusedPanelId = editorId; }}
+            onFinalize={(answers, name, color) => finalizeEdit(editorId, answers, name)}
+            onCancel={() => closeEditor(editorId)}
+            onRename={(name, color) => renameCandidate(editorId, name, color)}
+            initialAnswers={editAnswers}
+            initialName={_name ?? ''}
+            onLiveUpdate={(answers) => liveUpdateEdit(editorId, answers)}
+            displayName={editLayer?.label ?? ''}
+            displayColor={editLayer?.color ?? null}
+          />
+        {/each}
+      </div>
+    {/if}
 
     <div
       class="resize-handle"
@@ -793,7 +891,7 @@
 
     {#if store.tutorialMode && !isWalkthrough}
       <div class="right-panel" style:width="{panelWidth}px">
-        <TutorialPanel onExit={() => { store.tutorialMode = false; }} />
+        <TutorialPanel onExit={exitTutorial} />
       </div>
     {:else}
       <div class="right-panel" style:width="{panelWidth}px">
@@ -808,8 +906,9 @@
             onToggleVisibility={toggleLayerVisibility}
             onStartEdit={startEditLayer}
             onGenerateRandom={generateRandomCandidate}
-            onOpenProfiler={() => { editingCandidateId = null; profilingOpen = true; }}
+            onOpenProfiler={() => { profilingOpen = true; focusedPanelId = 'new'; }}
             onEditCandidate={startEditCandidate}
+            onRePlotSurvey={rePlotSurvey}
           />
         </div>
       </div>
@@ -819,22 +918,9 @@
 
 {#if isWalkthrough}
   <WalkthroughOverlay
-    onExit={() => { store.tutorialMode = false; }}
+    onExit={exitTutorial}
     onGenerateRandomCandidate={generateRandomCandidate}
     onAddData={addData}
-  />
-{/if}
-
-{#if profilingOpen}
-  {@const editLayer = editingCandidateId ? store.layers.find(l => l.id === editingCandidateId) : null}
-  {@const editProfile = editLayer?.points[0]?._profile}
-  {@const { _name, ...editAnswers } = editProfile ?? { _name: undefined }}
-  <CandidateProfiler
-    onFinalize={finalizeProfile}
-    onCancel={() => { profilingOpen = false; editingCandidateId = null; }}
-    initialAnswers={editProfile ? editAnswers : null}
-    initialName={editProfile ? (_name ?? '') : null}
-    onLiveUpdate={editingCandidateId ? liveUpdateCandidate : null}
   />
 {/if}
 
@@ -907,10 +993,11 @@
     gap: 8px;
   }
   .toolbar-left, .toolbar-right { display: flex; gap: 6px; }
-  .toolbar-center { position: absolute; left: 50%; transform: translateX(-50%); }
+  .toolbar-center { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
   .tutorial-btn { font-style: italic; letter-spacing: 0.03em; }
 
   .toolbar-btn {
+    display: inline-flex; align-items: center; gap: 4px;
     padding: 4px 12px; border: 1px solid #2D2B27; border-radius: 4px;
     background: transparent; cursor: pointer; font-size: 12px; font-weight: 500;
     color: #2D2B27; transition: background 0.1s, opacity 0.1s;
@@ -929,12 +1016,10 @@
   .main { display: flex; flex: 1; overflow: hidden; }
   .plot-area { position: relative; flex: 1; overflow: hidden; border: 1px solid #D5CFC6; border-right: none; background: #F5F0E8; }
   .mode-bubble {
-    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
     display: flex; align-items: center; gap: 8px;
-    padding: 7px 14px; border-radius: 999px;
-    background: #2D2B27; color: #F5F0E8; font-size: 12px;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
-    pointer-events: none; z-index: 10;
+    padding: 5px 12px; border-radius: 999px;
+    background: #2D2B27; color: #F5F0E8; font-size: 11px;
+    pointer-events: none;
     animation: bubble-in 0.18s ease-out;
   }
   .mode-bubble strong { color: #fff; font-weight: 600; text-transform: capitalize; }
@@ -945,13 +1030,26 @@
   }
   .mode-hint { opacity: 0.7; margin-left: 4px; }
   @keyframes bubble-in {
-    from { opacity: 0; transform: translate(-50%, -6px); }
-    to   { opacity: 1; transform: translate(-50%, 0); }
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
   @keyframes bubble-pulse {
     0%   { box-shadow: 0 0 0 0 rgba(204,120,87,0.6); }
     70%  { box-shadow: 0 0 0 8px rgba(204,120,87,0); }
     100% { box-shadow: 0 0 0 0 rgba(204,120,87,0); }
+  }
+
+  .profiler-col {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 12px;
+    overflow-y: auto;
+    border-left: 1px solid #D5CFC6;
+    border-right: 1px solid #D5CFC6;
+    background: #F5F0E8;
   }
 
   .resize-handle {
@@ -973,7 +1071,7 @@
   .config-area {
     flex: 0 0 auto;
     min-height: 320px;
-    max-height: 55%;
+    max-height: 70%;
     overflow: hidden;
     display: flex;
     flex-direction: column;
