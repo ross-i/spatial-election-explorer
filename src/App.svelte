@@ -4,7 +4,7 @@
   import { run_election } from './bridge.js';
   import { gaussian, uniformRect, uniformDisc, surveyFromData } from './lib/pointGen.js';
   import { INDEXES, defaultRankings, rankingsToWeights, scoreRespondent } from './lib/surveyIndexes.js';
-  import { makeLayer, toLayerBundle, formatLabel, layerColor, VOTER_LAYER_COLOR, CANDIDATE_LAYER_COLOR } from './lib/layerUtils.js';
+  import { makeLayer, toLayerBundle, formatLabel, layerColor, VOTER_LAYER_COLOR, CANDIDATE_LAYER_COLOR, SURVEY_CLICK_CANDIDATE_COLOR } from './lib/layerUtils.js';
   import PlotCanvas from './components/PlotCanvas.svelte';
   import ConfigPanel from './components/ConfigPanel.svelte';
   import DataPointsList from './components/DataPointsList.svelte';
@@ -446,7 +446,11 @@
 
       const kind = type === 'candidate' && store.activeTab === 'survey' ? { kind: 'survey_candidate' } : null;
       const plotColor =
-        type === 'voter' ? VOTER_LAYER_COLOR : CANDIDATE_LAYER_COLOR;
+        type === 'voter'
+          ? VOTER_LAYER_COLOR
+          : kind
+            ? SURVEY_CLICK_CANDIDATE_COLOR
+            : CANDIDATE_LAYER_COLOR;
       store.layers = [...store.layers, makeLayer(
         type, [{ x, y }],
         `${type.charAt(0).toUpperCase() + type.slice(1)}(${x.toFixed(2)},${y.toFixed(2)})`,
