@@ -41,6 +41,8 @@ class AppStore {
   surveyXRankOpen = $state(false);
   surveyYRankOpen = $state(false);
   surveyWasDeleted = $state(false);
+  /** Pixel height of the survey config (voter) stack in the right panel; drag handle resizes vs candidate list. */
+  surveyStackTopPx = $state(500);
 }
 
 export const store = new AppStore();
