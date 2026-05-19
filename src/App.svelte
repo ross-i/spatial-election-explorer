@@ -543,6 +543,13 @@
     (store.addMode !== null || store.selectingCenter)
   );
 
+  /** Cancels an in-flight survey ranking/axis tween (new deps re-run the effect). */
+  let cancelSurveyRankTween = null;
+  const SURVEY_RANK_TWEEN_MS = 420;
+  function easeOutCubic(t) {
+    return 1 - (1 - t) ** 3;
+  }
+
   // Delete position-placed survey candidates only when the axis topic actually changes
   let _prevXAxis = store.surveyXAxis;
   let _prevYAxis = store.surveyYAxis;
@@ -589,6 +596,9 @@
     if (!surveyLayer && !candidateLayers.length && !newSurveyPts?.length) return;
 
     untrack(() => {
+      cancelSurveyRankTween?.();
+      cancelSurveyRankTween = null;
+
       let layers = store.layers.map(l => {
         if (surveyLayer && l.id === surveyLayer.id && newSurveyPts?.length) {
           return { ...l, points: newSurveyPts, label: newSurveyLabel };
@@ -604,14 +614,92 @@
         }
         return l;
       });
-      if (!surveyLayer && newSurveyPts?.length) {
+      const prependedSurvey = !surveyLayer && newSurveyPts?.length;
+      if (prependedSurvey) {
         layers = [
           makeLayer('voter', newSurveyPts, newSurveyLabel, { kind: 'survey' }, layerColor(layers.length)),
           ...layers,
         ];
       }
-      store.layers = layers;
+
       store.electionResult = null;
+
+      if (prependedSurvey) {
+        store.layers = layers;
+        return;
+      }
+
+      const oldSurveyPts = surveyLayer?.points ?? [];
+      const hasSurveyAnim =
+        Boolean(surveyLayer && newSurveyPts?.length > 0 && oldSurveyPts.length > 0);
+      const hasCandAnim = candidateLayers.length > 0;
+
+      if (!hasSurveyAnim && !hasCandAnim) {
+        store.layers = layers;
+        return;
+      }
+
+      const oldSurveyById = new Map(
+        oldSurveyPts
+          .filter((p) => p._respondent?.id != null)
+          .map((p) => [String(p._respondent.id), { x: p.x, y: p.y }])
+      );
+      const oldCandByLayerId = new Map(
+        candidateLayers.map((l) => [l.id, l.points.map((p) => ({ x: p.x, y: p.y }))])
+      );
+
+      let cancelled = false;
+      cancelSurveyRankTween = () => {
+        cancelled = true;
+        cancelSurveyRankTween = null;
+      };
+
+      let start = null;
+      function frame(now) {
+        if (cancelled) return;
+        if (start === null) start = now;
+        const u = Math.min(1, (now - start) / SURVEY_RANK_TWEEN_MS);
+        const t = easeOutCubic(u);
+        const next = layers.map((l) => {
+          if (surveyLayer && l.id === surveyLayer.id && newSurveyPts?.length) {
+            const pts = newSurveyPts.map((np) => {
+              const id = np._respondent?.id;
+              if (id == null) return np;
+              const old = oldSurveyById.get(String(id));
+              if (!old) return np;
+              return {
+                ...np,
+                x: old.x + (np.x - old.x) * t,
+                y: old.y + (np.y - old.y) * t,
+              };
+            });
+            return { ...l, points: pts, label: newSurveyLabel };
+          }
+          if (l.type === 'candidate' && l.points.some((p) => p._profile)) {
+            const starts = oldCandByLayerId.get(l.id);
+            const pts = l.points.map((p, i) => {
+              if (!p._profile) return p;
+              const old = starts?.[i];
+              if (!old) return p;
+              return {
+                ...p,
+                x: old.x + (p.x - old.x) * t,
+                y: old.y + (p.y - old.y) * t,
+              };
+            });
+            return { ...l, points: pts };
+          }
+          return l;
+        });
+        store.layers = next;
+        if (u < 1) {
+          requestAnimationFrame(frame);
+        } else if (!cancelled) {
+          store.layers = layers;
+          cancelSurveyRankTween = null;
+        }
+      }
+      requestAnimationFrame(frame);
     });
   });
 
@@ -761,6 +849,78 @@
     else if (e.key === 'End') { panelWidth = 260; e.preventDefault(); }
   }
 
+  /** Right column (config + data); used to clamp survey vertical split. */
+  let rightPanelEl = $state(null);
+
+  const SURVEY_STACK_HANDLE = 6;
+  const SURVEY_STACK_MIN_TOP = 140;
+  const SURVEY_STACK_MIN_DATA = 168;
+
+  function clampSurveyStackTop(px) {
+    const el = rightPanelEl;
+    if (!el) return px;
+    const total = el.getBoundingClientRect().height;
+    const maxTop = total - SURVEY_STACK_MIN_DATA - SURVEY_STACK_HANDLE;
+    return Math.round(Math.min(Math.max(SURVEY_STACK_MIN_TOP, maxTop), Math.max(SURVEY_STACK_MIN_TOP, px)));
+  }
+
+  $effect(() => {
+    if (store.activeTab !== 'survey' || !rightPanelEl) return;
+    const el = rightPanelEl;
+    const ro = new ResizeObserver(() => {
+      untrack(() => {
+        store.surveyStackTopPx = clampSurveyStackTop(store.surveyStackTopPx);
+      });
+    });
+    ro.observe(el);
+    untrack(() => {
+      store.surveyStackTopPx = clampSurveyStackTop(store.surveyStackTopPx);
+    });
+    return () => ro.disconnect();
+  });
+
+  function onSurveyStackResizeStart(e) {
+    if (store.activeTab !== 'survey') return;
+    e.preventDefault();
+    const startY = e.clientY;
+    const startH = store.surveyStackTopPx;
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'row-resize';
+
+    function onMouseMove(ev) {
+      store.surveyStackTopPx = clampSurveyStackTop(startH + (ev.clientY - startY));
+    }
+    function onMouseUp() {
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    }
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }
+
+  function onSurveyStackResizeKey(e) {
+    const STEP = 12;
+    if (e.key === 'ArrowDown') {
+      store.surveyStackTopPx = clampSurveyStackTop(store.surveyStackTopPx + STEP);
+      e.preventDefault();
+    } else if (e.key === 'ArrowUp') {
+      store.surveyStackTopPx = clampSurveyStackTop(store.surveyStackTopPx - STEP);
+      e.preventDefault();
+    } else if (e.key === 'Home') {
+      store.surveyStackTopPx = clampSurveyStackTop(SURVEY_STACK_MIN_TOP);
+      e.preventDefault();
+    } else if (e.key === 'End') {
+      const el = rightPanelEl;
+      const total = el?.getBoundingClientRect().height ?? 600;
+      store.surveyStackTopPx = clampSurveyStackTop(
+        total - SURVEY_STACK_MIN_DATA - SURVEY_STACK_HANDLE
+      );
+      e.preventDefault();
+    }
+  }
+
   function popupTitle(pt) {
     if (pt._name !== undefined) return pt._name || 'Candidate';
     return `Respondent #${pt.id}`;
@@ -894,10 +1054,25 @@
         <TutorialPanel onExit={exitTutorial} />
       </div>
     {:else}
-      <div class="right-panel" style:width="{panelWidth}px">
-        <div class="config-area">
+      <div class="right-panel" bind:this={rightPanelEl} style:width="{panelWidth}px">
+        <div
+          class="config-area"
+          class:config-area-survey={store.activeTab === 'survey'}
+          style:flex={store.activeTab === 'survey' ? `0 0 ${store.surveyStackTopPx}px` : undefined}
+        >
           <ConfigPanel onAddData={addData} onSelectCenter={startSelectCenter} onSwitchTab={handleSwitchTab} />
         </div>
+        {#if store.activeTab === 'survey'}
+          <div
+            class="survey-stack-handle"
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Resize voter survey panel and candidate panel"
+            tabindex="0"
+            onmousedown={onSurveyStackResizeStart}
+            onkeydown={onSurveyStackResizeKey}
+          ></div>
+        {/if}
         <div class="data-area">
           <DataPointsList
             onGenerate={generateElection}
@@ -1077,7 +1252,26 @@
     flex-direction: column;
   }
 
-  .data-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .config-area.config-area-survey {
+    min-height: 120px;
+    max-height: none;
+    flex-shrink: 0;
+  }
+
+  .survey-stack-handle {
+    flex-shrink: 0;
+    height: 6px;
+    cursor: row-resize;
+    background: #d5cfc6;
+    transition: background 0.15s;
+  }
+  .survey-stack-handle:hover { background: #cc7857; }
+  .survey-stack-handle:focus-visible {
+    outline: 2px solid #cc7857;
+    outline-offset: -2px;
+  }
+
+  .data-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
 
   .popup-backdrop {
     position: fixed; inset: 0; background: rgba(0,0,0,0.35);
