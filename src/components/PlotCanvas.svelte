@@ -5,17 +5,12 @@
 
   const { layers, electionResult, showVoters, showCandidates, interactive, onPlotClick, onPointClick, centerPreview, highlightedLayerId, onCenterMove, axisInfo } = $props();
 
-  /** Elected candidates: darker than pre-election fill; stroke stays in ochre family (not UI coral). */
   const WINNER_FALLBACK_FILL = '#5C4324';
   const WINNER_FALLBACK_STROKE = '#8E6A22';
   const LOSER_OPACITY = 0.12;
   const LOSER_OPACITY_LIT = 0.32;
 
   let svgEl;
-
-  function trunc(s, n) {
-    return s && s.length > n ? s.slice(0, n - 1) + '…' : (s ?? '');
-  }
 
   // Suppresses draw() during an active drag so elements aren't destroyed mid-gesture
   let isDragging = false;
@@ -53,54 +48,63 @@
 
     svgNode.selectAll('*').remove();
 
+    // Clip rect for data elements — small buffer so edge points aren't cut at normal zoom
+    const clipBuf = size * 0.0125;
+    svgNode.append('defs')
+      .append('clipPath').attr('id', 'plot-clip')
+      .append('rect')
+        .attr('x', -clipBuf).attr('y', -clipBuf)
+        .attr('width', size + 2 * clipBuf).attr('height', size + 2 * clipBuf);
+
     const g = svgNode.append('g').attr('transform', `translate(${offsetX},${offsetY})`);
 
     const xScale = d3.scaleLinear().domain([0, 1]).range([0, size]);
     const yScale = d3.scaleLinear().domain([0, 1]).range([size, 0]);
 
+    const zx = xScale, zy = yScale, zk = 1;
+
+    const SERIF = 'system-ui, -apple-system, sans-serif';
     const styleAxis = ax => {
       ax.selectAll('line,path').attr('stroke', '#D5CFC6');
-      ax.selectAll('text').attr('fill', '#9C9690').attr('font-size', '10px');
+      ax.selectAll('text').attr('fill', '#9C9690').attr('font-size', '12px').attr('font-family', SERIF);
     };
-    g.append('g').attr('transform', `translate(0,${size})`).call(d3.axisBottom(xScale).ticks(5)).call(styleAxis);
-    g.append('g').call(d3.axisLeft(yScale).ticks(5)).call(styleAxis);
+    g.append('g').attr('transform', `translate(0,${size})`).call(d3.axisBottom(zx).ticks(5)).call(styleAxis);
+    g.append('g').call(d3.axisLeft(zy).ticks(5)).call(styleAxis);
 
     if (axisInfo) {
       // X axis title
       g.append('text')
-        .attr('x', size / 2).attr('y', size + 48)
-        .attr('text-anchor', 'middle').attr('font-size', '13px')
-        .attr('fill', '#2D2B27').attr('font-family', 'sans-serif').attr('font-weight', '700')
+        .attr('x', size / 2).attr('y', size + 50)
+        .attr('text-anchor', 'middle').attr('font-size', '16px')
+        .attr('fill', '#2D2B27').attr('font-family', SERIF).attr('font-weight', '700')
         .text(axisInfo.x.label);
-      // X low annotation
+      // X low/high annotations — fixed pixel positions, describe global axis direction
       g.append('text')
-        .attr('x', xScale(0.2)).attr('y', size + 32)
-        .attr('text-anchor', 'end').attr('font-size', '10px')
-        .attr('fill', '#CC7857')
+        .attr('x', xScale(0.2)).attr('y', size + 34)
+        .attr('text-anchor', 'end').attr('font-size', '12px')
+        .attr('fill', '#CC7857').attr('font-family', SERIF)
         .text(axisInfo.x.lowLabel);
-      // X high annotation
       g.append('text')
-        .attr('x', xScale(0.75)).attr('y', size + 32)
-        .attr('text-anchor', 'start').attr('font-size', '10px')
-        .attr('fill', '#CC7857')
+        .attr('x', xScale(0.75)).attr('y', size + 34)
+        .attr('text-anchor', 'start').attr('font-size', '12px')
+        .attr('fill', '#CC7857').attr('font-family', SERIF)
         .text(axisInfo.x.highLabel);
       // Y axis title
       g.append('text')
-        .attr('transform', `translate(${-48},${size / 2}) rotate(-90)`)
-        .attr('text-anchor', 'middle').attr('font-size', '13px')
-        .attr('fill', '#2D2B27').attr('font-family', 'sans-serif').attr('font-weight', '600')
+        .attr('transform', `translate(${-50},${size / 2}) rotate(-90)`)
+        .attr('text-anchor', 'middle').attr('font-size', '16px')
+        .attr('fill', '#2D2B27').attr('font-family', SERIF).attr('font-weight', '700')
         .text(axisInfo.y.label);
-      // Y low annotation starting at y=0.1
+      // Y low/high annotations — fixed pixel positions
       g.append('text')
-        .attr('transform', `translate(${-32},${yScale(0.1)}) rotate(-90)`)
-        .attr('text-anchor', 'start').attr('font-size', '10px')
-        .attr('fill', '#CC7857')
+        .attr('transform', `translate(${-34},${yScale(0.1)}) rotate(-90)`)
+        .attr('text-anchor', 'start').attr('font-size', '12px')
+        .attr('fill', '#CC7857').attr('font-family', SERIF)
         .text(axisInfo.y.lowLabel);
-      // Y high annotation starting at y=0.7
       g.append('text')
-        .attr('transform', `translate(${-32},${yScale(0.75)}) rotate(-90)`)
-        .attr('text-anchor', 'start').attr('font-size', '10px')
-        .attr('fill', '#CC7857')
+        .attr('transform', `translate(${-34},${yScale(0.75)}) rotate(-90)`)
+        .attr('text-anchor', 'start').attr('font-size', '12px')
+        .attr('fill', '#CC7857').attr('font-family', SERIF)
         .text(axisInfo.y.highLabel);
     }
 
@@ -111,7 +115,7 @@
       .on('click', (event) => {
         if (!interactive || !onPlotClick) return;
         const [mx, my] = d3.pointer(event);
-        onPlotClick(xScale.invert(mx), yScale.invert(my));
+        onPlotClick(zx.invert(mx), zy.invert(my));
       });
 
     // Render voters per-layer to support highlight
@@ -121,17 +125,19 @@
         const r = lit ? 6 : 4;
         const opacity = 0.75;
         const fill = VOTER_LAYER_COLOR;
-        g.selectAll(null)
+        g.append('g').attr('clip-path', 'url(#plot-clip)')
+          .selectAll(null)
           .data(layer.points)
           .join('circle')
-          .attr('cx', d => xScale(d.x))
-          .attr('cy', d => yScale(d.y))
+          .attr('cx', d => zx(d.x))
+          .attr('cy', d => zy(d.y))
           .attr('r', r)
           .attr('fill', fill)
           .attr('opacity', opacity)
           .attr('stroke', lit ? d3.color(fill)?.darker(0.5) : 'none')
           .attr('stroke-width', lit ? 1.5 : 0)
-          .style('cursor', d => d._respondent ? 'pointer' : 'default')
+          .style('cursor', d => (d._respondent && onPointClick) ? 'pointer' : 'inherit')
+          .style('pointer-events', onPointClick ? 'auto' : 'none')
           .on('mouseover', function() { d3.select(this).attr('r', r + 2).attr('opacity', 1); })
           .on('mouseout',  function() { d3.select(this).attr('r', r).attr('opacity', opacity); })
           .on('click', function(event, d) {
@@ -144,7 +150,7 @@
 
     if (centerPreview) {
       const { x, y, distribution, stdDev, rectWidth, rectHeight, discRadius } = centerPreview;
-      const px = xScale(x), py = yScale(y);
+      const px = zx(x), py = zy(y);
 
       // Clipped container for the distribution shape
       const clip = g.append('svg')
@@ -168,23 +174,23 @@
           distCircles.push(
             clip.append('circle')
               .attr('cx', px).attr('cy', py)
-              .attr('r', stdDev * sd * size)
+              .attr('r', stdDev * sd * size * zk)
               .attr('fill', fill).attr('stroke', stroke)
               .attr('stroke-width', 1).attr('stroke-dasharray', '5 3')
           );
         }
       } else if (distribution === 'uniform_rectangle') {
         distRect = clip.append('rect')
-          .attr('x', xScale(x - rectWidth / 2))
-          .attr('y', yScale(y + rectHeight / 2))
-          .attr('width', rectWidth * size).attr('height', rectHeight * size)
+          .attr('x', zx(x - rectWidth / 2))
+          .attr('y', zy(y + rectHeight / 2))
+          .attr('width', rectWidth * size * zk).attr('height', rectHeight * size * zk)
           .attr('fill', 'rgba(204,120,87,0.10)')
           .attr('stroke', 'rgba(204,120,87,0.70)')
           .attr('stroke-width', 1.5).attr('stroke-dasharray', '5 3');
       } else if (distribution === 'uniform_disc') {
         distCircle = clip.append('circle')
           .attr('cx', px).attr('cy', py)
-          .attr('r', discRadius * size)
+          .attr('r', discRadius * size * zk)
           .attr('fill', 'rgba(204,120,87,0.10)')
           .attr('stroke', 'rgba(204,120,87,0.70)')
           .attr('stroke-width', 1.5).attr('stroke-dasharray', '5 3');
@@ -215,7 +221,8 @@
         dragRefs = {
           crosshairH, crosshairV, crosshairDot, handle,
           distCircles, distCircle, distRect,
-          distribution, stdDev, rectWidth, rectHeight, discRadius, size, xScale, yScale,
+          distribution, stdDev, rectWidth, rectHeight, discRadius, size,
+          xScale: zx, yScale: zy,
         };
 
         handle.call(d3.drag()
@@ -248,8 +255,8 @@
           })
           .on('end', function(event) {
             isDragging = false;
-            const nx = Math.max(0, Math.min(1, xScale.invert(event.x)));
-            const ny = Math.max(0, Math.min(1, yScale.invert(event.y)));
+            const nx = Math.max(0, Math.min(1, zx.invert(event.x)));
+            const ny = Math.max(0, Math.min(1, zy.invert(event.y)));
             if (onCenterMove) onCenterMove(nx, ny);
           })
         );
@@ -259,6 +266,7 @@
     if (showCandidates) {
       const winnerIds = resolveWinnerIds(layers, electionResult);
       const postElection = Boolean(electionResult?.length) && winnerIds.size > 0;
+      const candG = g.append('g').attr('clip-path', 'url(#plot-clip)');
 
       for (const layer of layers.filter(l => l.visible && l.type === 'candidate')) {
         const lit = highlightedLayerId && layer.id === highlightedLayerId;
@@ -266,7 +274,7 @@
         const baseStroke = d3.color(baseFill)?.darker(0.5).formatHex() ?? '#B8634A';
         layer.points.forEach((p, i) => {
           const isWinner = winnerIds.has(`${layer.id}-${i}`);
-          const cx = xScale(p.x), cy = yScale(p.y);
+          const cx = zx(p.x), cy = zy(p.y);
           const sz = postElection ? 10 : (lit ? 14 : 10);
           let fill = baseFill;
           let stroke = baseStroke;
@@ -285,7 +293,7 @@
             }
           }
 
-          g.append('path')
+          candG.append('path')
             .datum(p)
             .attr('d', starPath(cx, cy, sz))
             .attr('fill', fill)
@@ -318,8 +326,11 @@
     void centerPreview;
     void highlightedLayerId;
     void axisInfo;
+    void interactive;
+    void onPointClick;
     draw();
   });
+
 </script>
 
 <svg bind:this={svgEl} class="plot-svg"></svg>

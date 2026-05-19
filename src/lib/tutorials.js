@@ -379,30 +379,77 @@ export const TUTORIALS = [
         advanceWhen: (s) => !!s.surveyYAxis && s.surveyYAxis !== s.surveyXAxis,
       },
       {
-        heading: 'Add candidates',
+        heading: 'Add a random candidate',
         content: [
-          `With both axes set, you can populate the plot with candidates. "Random Candidate" samples a real respondent from the survey and drops them in with their full profile attached. "Profile Candidate" lets you answer the survey yourself to place a custom candidate.`,
-          `Click any candidate dot to see the survey answers behind their position — a small profile card opens.`,
-          `Add a few yourself, or just click "next" and we'll drop in three random candidates so the election has something to work with.`,
+          `The "Random candidate" button generates a candidate by randomly assigning an answer to every survey question. Their position on the plot is then calculated from those randomly-chosen answers using the same weighted scoring as the voter respondents.`,
+          `Click the button to add one now, or click "next" and we'll add one for you.`,
         ],
-        target: '[data-walkthrough="survey-candidate-btns"]',
-        addRandomCandidatesOnNext: 3,
+        target: '[data-walkthrough="random-candidate-btn"]',
+        extraTargets: ['[data-walkthrough="plot-area"]'],
+        addRandomCandidatesOnNext: 1,
         prep: (s) => {
           s.activeTab = 'survey';
+          s.addMode = null;
           if (!s.surveyXAxis) s.surveyXAxis = 'gov';
           if (!s.surveyYAxis || s.surveyYAxis === s.surveyXAxis) s.surveyYAxis = 'social';
         },
-        advanceWhen: (s) => s.layers.filter((l) => l.type === 'candidate').length >= 3,
+        advanceWhen: (s) => s.layers.filter((l) => l.type === 'candidate').length >= 1,
+      },
+      {
+        heading: 'Edit a candidate\'s survey responses',
+        content: [
+          `Every candidate added this way carries a full profile of survey answers. Click the pencil icon next to the candidate in the list on the right to open the editor. Change any answer and the candidate moves on the plot in real time.`,
+          `Press "n" inside the editor to rename the candidate or change their color. When you're done exploring, click "next."`,
+        ],
+        target: '[data-walkthrough="candidate-list"]',
+        extraTargets: ['[data-walkthrough="plot-area"]'],
+        prep: (s) => {
+          s.activeTab = 'survey';
+          s.addMode = null;
+          if (!s.surveyXAxis) s.surveyXAxis = 'gov';
+          if (!s.surveyYAxis || s.surveyYAxis === s.surveyXAxis) s.surveyYAxis = 'social';
+        },
+      },
+      {
+        heading: 'Build a profile candidate yourself',
+        content: [
+          `"Profile candidate" opens a questionnaire where you answer the survey questions directly to define a candidate's position. Each answer you give shifts the candidate on the plot — you're essentially designing where they stand.`,
+          `Click the button below to open the form and fill it out, then come back and click "next" to continue.`,
+        ],
+        target: '[data-walkthrough="profile-candidate-btn"]',
+        extraTargets: ['[data-walkthrough="plot-area"]'],
+        prep: (s) => {
+          s.activeTab = 'survey';
+          s.addMode = null;
+          if (!s.surveyXAxis) s.surveyXAxis = 'gov';
+          if (!s.surveyYAxis || s.surveyYAxis === s.surveyXAxis) s.surveyYAxis = 'social';
+        },
+      },
+      {
+        heading: 'Place a candidate by clicking the plot',
+        content: [
+          `The "+candidate" button in the toolbar (or press "c") activates placement mode — the cursor becomes a crosshair. Click anywhere on the plot to drop a candidate at that exact position.`,
+          `Unlike survey-button candidates, these position-placed candidates have no profile attached: they can't be edited with the pencil, they don't move when rankings change, and they'll be removed if you switch the axis topic. Use them for quick spatial experiments; use the survey buttons when you want a candidate whose position is grounded in real responses.`,
+        ],
+        target: '[data-walkthrough="add-candidate-btn"]',
+        extraTargets: ['[data-walkthrough="plot-area"]'],
+        prep: (s) => {
+          s.activeTab = 'survey';
+          s.addMode = 'candidate';
+          if (!s.surveyXAxis) s.surveyXAxis = 'gov';
+          if (!s.surveyYAxis || s.surveyYAxis === s.surveyXAxis) s.surveyYAxis = 'social';
+        },
       },
       {
         heading: 'Run the election',
         content: [
-          `Once you have candidates placed, pick a voting rule from the dropdown and click "run election." The winners are highlighted on the plot — just like in the earlier tutorials, but now over real survey respondents.`,
-          `That's the full loop: shape the space with rankings, populate it with candidates, and compare voting rules on real data. Click "back to explorer" whenever you're ready.`,
+          `With candidates on the plot, pick a voting rule from the dropdown and click "run election." The winners are highlighted — just like the earlier tutorials, but now over real survey respondents.`,
+          `That's the full loop: shape the space with rankings, populate it with candidates, and compare voting rules on real data. Click "back to explorer" whenever you're ready to experiment freely.`,
         ],
         target: '[data-walkthrough="run-election-row"]',
         prep: (s) => {
           s.activeTab = 'survey';
+          s.addMode = null;
           if (!s.surveyXAxis) s.surveyXAxis = 'gov';
           if (!s.surveyYAxis || s.surveyYAxis === s.surveyXAxis) s.surveyYAxis = 'social';
         },

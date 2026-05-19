@@ -19,6 +19,12 @@
     {/each}
   </div>
 
+  {#if store.activeTab === 'survey'}
+    <div class="section-header">
+      <span class="section-title">Voter Survey Respondent Data</span>
+    </div>
+  {/if}
+
   <div class="tab-body">
     {#if store.activeTab === 'synthetic'}
       <SyntheticTab {onSelectCenter} />
@@ -74,6 +80,23 @@
     font-weight: 700;
     color: #CC7857;
     border-bottom: 2px solid #CC7857;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    background: #e5dfd5;
+    border-bottom: 1px solid #d5cfc6;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-style: italic;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #5a5550;
   }
   .tab-body { flex: 1; padding: 14px 12px; overflow-y: auto; }
   .add-row {

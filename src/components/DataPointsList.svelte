@@ -22,6 +22,7 @@
     onGenerateRandom,
     onOpenProfiler,
     onEditCandidate,
+    onRePlotSurvey,
   } = $props();
 
   /** 5-point star path in viewBox 0 0 20 20 (matches plot star proportions). */
@@ -48,37 +49,114 @@
       store.electionResult = null;
     }
   });
+
+  let voterLayers = $derived(store.layers.filter(l => l.type === 'voter'));
+  let candidateLayers = $derived(store.layers.filter(l => l.type !== 'voter'));
+
+  let showRePlot = $derived(store.surveyWasDeleted && !store.layers.some(l => l.params?.kind === 'survey'));
+
+  let pencilToast = $state(false);
+  let pencilToastTimer = null;
+  function showPencilToast(e) {
+    e.stopPropagation();
+    pencilToast = true;
+    clearTimeout(pencilToastTimer);
+    pencilToastTimer = setTimeout(() => { pencilToast = false; }, 5000);
+  }
+
 </script>
 
 <div class="data-panel">
+  <!-- Voter layer rows sit above the CANDIDATE DATA header — survey tab only -->
+  {#if store.activeTab === 'survey'}
+  {#if showRePlot}
+    <div class="voter-list">
+      <button class="replot-btn" onclick={onRePlotSurvey}>Re-plot survey respondents</button>
+    </div>
+  {:else if voterLayers.length > 0}
+    <div class="voter-list">
+      {#each voterLayers as layer (layer.id)}
+        <div
+          class="layer-row"
+          class:hidden={!layer.visible}
+          class:highlighted={store.highlightedLayerId === layer.id}
+          role="button"
+          tabindex="0"
+          aria-pressed={store.highlightedLayerId === layer.id}
+          aria-label={`Highlight ${layer.label}`}
+          onclick={() => toggleHighlight(layer.id)}
+          onkeydown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              toggleHighlight(layer.id);
+            }
+          }}
+          style="cursor: pointer;"
+        >
+          <span class="layer-marker" aria-hidden="true">
+            <span class="color-swatch" style:background={VOTER_LAYER_COLOR}></span>
+          </span>
+          <span class="layer-label" title={layer.label}>{layer.label}</span>
+          {#if layer.params}
+            <span class="pencil-wrap">
+              <span
+                class="icon-btn pencil-disabled"
+                onclick={showPencilToast}
+              >
+                <span class="no-icon-wrap">
+                  <img src={pencilIcon} alt="edit" />
+                  <svg class="no-symbol" viewBox="0 0 16 16" aria-hidden="true">
+                    <circle cx="8" cy="8" r="6.5" fill="none" stroke="#cc4444" stroke-width="1.8"/>
+                    <line x1="3.5" y1="12.5" x2="12.5" y2="3.5" stroke="#cc4444" stroke-width="1.8"/>
+                  </svg>
+                </span>
+              </span>
+              <div class="pencil-tooltip" class:visible={pencilToast}>
+                Edit the distribution of survey respondents on the plot by changing the X and Y axis topics and re-ranking questions above.
+              </div>
+            </span>
+          {/if}
+          <button class="icon-btn" onclick={() => onDelete(layer.id)} title="delete">
+            <img src={trashIcon} alt="delete" />
+          </button>
+          <button class="icon-btn" onclick={() => onToggleVisibility(layer.id)} title="toggle">
+            <img src={layer.visible ? eyeIcon : eyeOffIcon} alt={layer.visible ? "hide" : "show"} />
+          </button>
+        </div>
+      {/each}
+    </div>
+  {/if}
+  {/if}
+
   <div class="panel-header">
-    <span class="panel-title">Data Points</span>
-    {#if store.activeTab === "survey"}
-      {@const axesReady =
-        store.surveyXAxis &&
-        store.surveyYAxis &&
-        store.surveyXAxis !== store.surveyYAxis}
-      <span class="cand-btn-group" data-walkthrough="survey-candidate-btns">
-        <button
-          class="cand-btn primary"
-          onclick={onGenerateRandom}
-          disabled={!axesReady}
-          title={axesReady ? "" : "Select both axes first"}
-          >Random Candidate</button
-        >
-        <button
-          class="cand-btn primary"
-          onclick={onOpenProfiler}
-          disabled={!axesReady}
-          title={axesReady ? "" : "Select both axes first"}
-          >Profile Candidate</button
-        >
-      </span>
-    {/if}
+    <span class="panel-title">{store.activeTab === 'survey' ? 'Candidate Data' : 'Data Points'}</span>
   </div>
 
-  <div class="layer-list">
-    {#each store.layers as layer (layer.id)}
+  {#if store.activeTab === "survey"}
+    {@const axesReady =
+      store.surveyXAxis &&
+      store.surveyYAxis &&
+      store.surveyXAxis !== store.surveyYAxis}
+    <div class="survey-gen-section" data-walkthrough="survey-candidate-btns">
+      <button
+        class="survey-gen-btn"
+        data-walkthrough="random-candidate-btn"
+        onclick={onGenerateRandom}
+        disabled={!axesReady}
+        title={axesReady ? "" : "Select both axes first"}
+      >+ Random candidate (randomized responses)</button>
+      <button
+        class="survey-gen-btn"
+        data-walkthrough="profile-candidate-btn"
+        onclick={onOpenProfiler}
+        disabled={!axesReady}
+        title={axesReady ? "" : "Select both axes first"}
+      >+ Profile candidate (answer questions)</button>
+    </div>
+  {/if}
+
+  <div class="layer-list" data-walkthrough="candidate-list">
+    {#each (store.activeTab === 'survey' ? candidateLayers : store.layers) as layer (layer.id)}
       <div
         class="layer-row"
         class:hidden={!layer.visible}
@@ -97,15 +175,13 @@
         style="cursor: pointer;"
       >
         <span class="layer-marker" aria-hidden="true">
-          {#if layer.type === "voter"}
-            <span class="color-swatch" style:background={VOTER_LAYER_COLOR}
-            ></span>
+          {#if layer.type === 'voter'}
+            <span class="color-swatch" style:background={VOTER_LAYER_COLOR}></span>
           {:else}
-            {@const cfill = layer.color ?? CANDIDATE_LAYER_COLOR}
             <svg class="cand-star" viewBox="0 0 20 20" aria-hidden="true">
               <path
                 d={starPathD(10, 10, 7.2)}
-                fill={cfill}
+                fill={layer.color ?? CANDIDATE_LAYER_COLOR}
                 stroke="#2D2B27"
                 stroke-opacity="0.22"
                 stroke-width="0.45"
@@ -118,7 +194,7 @@
           class:editing={store.editingLayerId === layer.id}
           title={layer.label}>{layer.label}</span
         >
-        {#if layer.params?.kind === "survey_candidate"}
+        {#if layer.params?.kind === "survey_candidate" && layer.points.some(p => p._profile)}
           <button
             class="icon-btn"
             onclick={() => onEditCandidate?.(layer.id)}
@@ -126,7 +202,7 @@
           >
             <img src={pencilIcon} alt="edit" />
           </button>
-        {:else if layer.params}
+        {:else if layer.params && layer.params.kind !== 'survey_candidate'}
           <button
             class="icon-btn cancel-btn"
             style:display={store.editingLayerId === layer.id ? "flex" : "none"}
@@ -267,6 +343,36 @@
     display: block;
     flex-shrink: 0;
   }
+  .survey-gen-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    flex-shrink: 0;
+  }
+  .survey-gen-btn {
+    width: 100%;
+    padding: 5px 8px;
+    text-align: center;
+    border: none;
+    border-radius: 20px;
+    background: #cc7857;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.4;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.1s;
+  }
+  .survey-gen-btn:hover:not(:disabled) { background: #b8634a; }
+  .survey-gen-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .section-divider {
+    margin: 0;
+    border: none;
+    border-top: 1px solid #d5cfc6;
+    flex-shrink: 0;
+  }
   .cand-btn-group {
     display: flex;
     align-items: center;
@@ -297,6 +403,70 @@
   .cand-btn:disabled {
     opacity: 0.35;
     cursor: not-allowed;
+  }
+  .voter-list {
+    padding: 2px 0;
+    background: #ede8df;
+    flex-shrink: 0;
+  }
+  .replot-btn {
+    display: block;
+    width: calc(100% - 20px);
+    margin: 8px 10px;
+    padding: 6px 10px;
+    background: #f5ede6;
+    border: 1px dashed #cc7857;
+    border-radius: 4px;
+    color: #cc7857;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.1s;
+  }
+  .replot-btn:hover {
+    background: #ede4dc;
+  }
+  .pencil-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .pencil-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .no-icon-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .no-symbol {
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    pointer-events: none;
+  }
+  .pencil-tooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 5px);
+    right: 0;
+    width: 200px;
+    padding: 6px 8px;
+    background: #2d2b27;
+    color: #faf7f2;
+    font-size: 10px;
+    line-height: 1.45;
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 10;
+    white-space: normal;
+  }
+  .pencil-tooltip.visible,
+  .pencil-wrap:hover .pencil-tooltip {
+    display: block;
   }
   .layer-list {
     flex: 1;

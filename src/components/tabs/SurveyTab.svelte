@@ -24,7 +24,6 @@
       if (id === store.surveyXAxis) store.surveyXAxis = store.surveyYAxis;
       store.surveyYAxis = id;
       store.surveyYRankOpen = true;
-      store.surveyXRankOpen = false;
     }
   }
 
@@ -94,7 +93,7 @@
     </select>
   </div>
   {#if store.surveyData}
-    <div class="data-note">{store.surveyData.length} respondents loaded</div>
+    <div class="data-note">{store.surveyData.length} respondents loaded <em>— note: respondents displayed with slight jitter for better visual distribution</em></div>
   {:else}
     <div class="data-note loading">Loading survey data…</div>
   {/if}
@@ -122,7 +121,6 @@
       {@const idx = indexById(xAxis)}
       {@const rankings = store.surveyRankings?.[idx.id] ?? idx.questions.map(q => q.col)}
       <div class="rank-panel" data-walkthrough="rank-panel">
-        <div class="direction-hint">0 ← {idx.lowLabel} &nbsp;...&nbsp; {idx.highLabel} → 1</div>
         <div class="rank-hint">drag to re-rank — top = most important to voters</div>
         <ul
           class="rank-list"
@@ -173,7 +171,6 @@
       {@const idx = indexById(yAxis)}
       {@const rankings = store.surveyRankings?.[idx.id] ?? idx.questions.map(q => q.col)}
       <div class="rank-panel" data-walkthrough="rank-panel">
-        <div class="direction-hint">0 ← {idx.lowLabel} &nbsp;...&nbsp; {idx.highLabel} → 1</div>
         <div class="rank-hint">drag to re-rank — top = most important to voters</div>
         <ul
           class="rank-list"
@@ -259,7 +256,6 @@
     font-style: italic; text-align: center;
   }
 
-  .direction-hint { font-size: 10px; color: #9ca3af; font-style: italic; }
   .rank-hint { font-size: 11px; color: #6b7280; }
 
   .rank-list { list-style: none; margin: 4px 0 0; padding: 14px 0; display: flex; flex-direction: column; gap: 3px; }

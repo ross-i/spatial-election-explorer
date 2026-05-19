@@ -15,8 +15,26 @@ export const LAYER_COLORS = [
   '#E54B4B', // red
 ];
 
+// 50 perceptually-distinct colors for survey candidates; only cycles on the 51st.
+export const SURVEY_CANDIDATE_COLORS = [
+  '#E63946', '#F4A261', '#2A9D8F', '#457B9D', '#8338EC',
+  '#06D6A0', '#FB5607', '#3A86FF', '#FFBE0B', '#FF006E',
+  '#118AB2', '#06A77D', '#FF6FA4', '#F77F00', '#FCBF49',
+  '#A8DADC', '#BAD7E9', '#E07A5F', '#7B3F00', '#81B29A',
+  '#F2CC8F', '#9D8DF1', '#2EC4B6', '#F72585', '#FF9F1C',
+  '#CBFF8C', '#A7C957', '#1ABC9C', '#E74C3C', '#90BE6D',
+  '#F39C12', '#27AE60', '#BC6C25', '#9B59B6', '#FF85A1',
+  '#16A085', '#D35400', '#C0392B', '#B5838D', '#2C3E50',
+  '#F1C40F', '#7F8C8D', '#6C5CE7', '#00B894', '#FD79A8',
+  '#A29BFE', '#55EFC4', '#E17055', '#74B9FF', '#FDCB6E',
+];
+
 export function layerColor(index) {
   return LAYER_COLORS[index % LAYER_COLORS.length];
+}
+
+export function surveyCandidateColor(index) {
+  return SURVEY_CANDIDATE_COLORS[index % SURVEY_CANDIDATE_COLORS.length];
 }
 
 export function makeLayer(type, pts, labelStr, params = null, color = null) {
