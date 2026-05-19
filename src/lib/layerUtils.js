@@ -4,6 +4,9 @@ export const VOTER_LAYER_COLOR = '#61AAF2';
 /** All candidate layers use this fill — same accent as primary buttons. */
 export const CANDIDATE_LAYER_COLOR = '#CC7857';
 
+/** Survey tab: candidates placed with +candidate (c) and a plot click — no survey profile. */
+export const SURVEY_CLICK_CANDIDATE_COLOR = '#5B6578';
+
 export const LAYER_COLORS = [
   '#4B7BE5', // blue
   '#E5754B', // orange
