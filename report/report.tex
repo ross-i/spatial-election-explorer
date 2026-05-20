@@ -51,11 +51,28 @@
 
 \maketitle
 
-\begin{figure*}
+\begin{figure*}[t]
   \centering
-  \includegraphics[width=0.7\textwidth]{img.png}
-  \caption{Simulating a multi-winner STV election with the Spatial Election Explorer (SEE).}
-  \label{fig:teaser}
+  \includegraphics[width=0.95\textwidth]{see-figure-overview.png}
+  \caption{The Spatial Election Explorer (SEE) synthetic data interface.
+  Voters (blue) and candidates (orange) are embedded in a 2D issue space
+  (left); the interface lets the user place points manually, sample
+  from synthetic distributions, load survey-grounded data, manage stacked data layers, and run an election under a chosen voting rule.
+  \textbf{(A)} Abstract 2D issue space; (unitless, $[0,1]$).
+  \textbf{(B)} Voter (blue dot). 
+  \textbf{(C)} Candidate (orange star). Winners are rendered at full opacity; eliminated candidates are dimmed in place.
+  \textbf{(D)} Gaussian sampling distribution, drawn as concentric
+  $1\sigma$/$2\sigma$/$3\sigma$ contours.
+  \textbf{(E)} Top bar: add voters or candidates by hand, launch the tutorial, import or export the current configuration.
+  \textbf{(F)} Tabs switch between synthetic
+  (\S\ref{sub:Input}) and survey data exploration (\S\ref{sub:Survey Data}).
+  \textbf{(G)} Synthetic distribution configuration, and click ``add data'' to drop the sampled points
+  onto the plot (\S\ref{sub:Input}).
+  \textbf{(H)} Each manual point or sampled distribution is a stackable,
+  editable layer (\S\ref{sub:Plot Management}).
+  \textbf{(I)} Choose voting rule (Plurality, Borda, IRV, Bloc Plurality,
+  STV, SNTV) and number of winners, then run the election.}
+  \label{fig:overview}
 \end{figure*}
 
 \input{0-abstract.tex}
