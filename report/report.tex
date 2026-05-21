@@ -51,11 +51,28 @@
 
 \maketitle
 
-\begin{figure*}
+\begin{figure*}[t]
   \centering
-  \includegraphics[width=0.7\textwidth]{img.png}
-  \caption{Simulating a multi-winner STV election with the Spatial Election Explorer (SEE).}
-  \label{fig:teaser}
+  \includegraphics[width=0.95\textwidth]{see-figure-overview.png}
+  \caption{The Spatial Election Explorer (SEE) synthetic data interface.
+  Voters (blue) and candidates (orange) are embedded in a 2D issue space
+  (left); the interface lets the user place points manually, sample
+  from synthetic distributions, load survey-grounded data, manage stacked data layers, and run an election under a chosen voting rule.
+  \textbf{(A)} Abstract 2D election space; (unitless, $[0,1]$).
+  \textbf{(B)} Voter (blue dot). 
+  \textbf{(C)} Candidate (orange star). Winners are rendered at full opacity; eliminated candidates are dimmed in place.
+  \textbf{(D)} Gaussian sampling distribution, drawn as concentric
+  $1\sigma$/$2\sigma$/$3\sigma$ contours.
+  \textbf{(E)} Top bar: add voters or candidates by hand, launch the tutorial, import or export the current configuration.
+  \textbf{(F)} Tabs switch between synthetic
+  (\S\ref{sub:Input}) and survey data exploration (\S\ref{sub:Survey Data}).
+  \textbf{(G)} Synthetic distribution configuration, and click ``add data'' to drop the sampled points
+  onto the plot (\S\ref{sub:Input}).
+  \textbf{(H)} Each manual point or sampled distribution is a stackable,
+  editable layer (\S\ref{sub:Plot Management}).
+  \textbf{(I)} Choose voting rule (Plurality, Borda, IRV, Bloc Plurality,
+  STV, SNTV) and number of winners, then run the election.}
+  \label{fig:overview}
 \end{figure*}
 
 \input{0-abstract.tex}
@@ -67,6 +84,23 @@
 \section{Preliminaries}%
 \label{sec:Preliminaries}
 \input{2-prelim.tex}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.95\textwidth]{see-figure-survey.png}
+  \caption{The survey data interface. Voters are loaded from a real political opinion
+  poll (here, the Fall 2014 Statewide IL Poll, 1006 respondents) and
+  projected onto two user-chosen ideology axes --- in this example, Role of
+  Government $\times$ Social Issues. Each axis is a weighted aggregate of
+  several survey questions, re-rankable by the user. Candidates can be
+  added either by randomized survey response or by answering the same
+  questions interactively.
+  \textbf{(A)} Axis selection and issue ranking panel. Defines the issue
+  space we are investigating in.
+  \textbf{(B)} +Random candidate creates a candidate point with a random profile.
+  \textbf{(C)} +Profile candidate creates a candidate point with a manually specified profile.}
+  \label{fig:survey}
+\end{figure*}
 
 \section{Application Design}%
 \label{sec:Design and Implementation}

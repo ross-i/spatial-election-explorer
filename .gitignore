@@ -17,3 +17,16 @@ __pycache__
 
 .claude/
 *.texbuild/
+
+# auxiliary report files
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.xdv

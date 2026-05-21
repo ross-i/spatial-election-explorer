@@ -872,6 +872,11 @@
     if (store.activeTab !== 'survey' || !rightPanelEl) return;
     const el = rightPanelEl;
     const ro = new ResizeObserver(() => {
+      // Skip transient sub-minimum heights (e.g. devtools screenshot capture
+      // temporarily reflows the viewport) — otherwise the clamp pins the top
+      // panel to its minimum and the value persists after capture.
+      const total = el.getBoundingClientRect().height;
+      if (total < SURVEY_STACK_MIN_TOP + SURVEY_STACK_MIN_DATA + SURVEY_STACK_HANDLE) return;
       untrack(() => {
         store.surveyStackTopPx = clampSurveyStackTop(store.surveyStackTopPx);
       });
