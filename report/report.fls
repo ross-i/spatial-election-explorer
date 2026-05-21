@@ -286,6 +286,9 @@ OUTPUT report.xdv
 INPUT .\2-prelim.tex
 INPUT .\2-prelim.tex
 INPUT 2-prelim.tex
+INPUT .\see-figure-survey.png
+INPUT .\see-figure-survey.png
+INPUT .\see-figure-survey.png
 INPUT .\3-design.tex
 INPUT .\3-design.tex
 INPUT 3-design.tex

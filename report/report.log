@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.12)  20 MAY 2026 16:04
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.12)  20 MAY 2026 19:48
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -716,17 +716,18 @@ Underfull \hbox (badness 4341) in paragraph at lines 66--68
 ) [1
 
 
-] (2-prelim.tex [2]) (3-design.tex [3]) (4-future-dir.tex
-Underfull \vbox (badness 1014) has occurred while \output is active []
+] (2-prelim.tex [2])
+File: see-figure-survey.png Graphic file (type bmp)
+<see-figure-survey.png>
+ (3-design.tex [3]
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
-)
+ [4]) (4-future-dir.tex)
 
 Package biblatex Warning: Month out of range or not an integer
-(biblatex)                at entry 'spatial' on input line 96.
+(biblatex)                at entry 'spatial' on input line 113.
 
-[4] [5
-
-] (report.aux)
+[5] (report.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-10-24>
@@ -738,12 +739,12 @@ Package logreq Info: Writing requests to 'report.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 20141 strings out of 402986
- 342588 string characters out of 5447882
- 1244641 words of memory out of 5000000
- 48593 multiletter control sequences out of 15000+600000
+ 20151 strings out of 402986
+ 342837 string characters out of 5447882
+ 1245363 words of memory out of 5000000
+ 48602 multiletter control sequences out of 15000+600000
  641538 words of font info for 108 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 72i,9n,79p,1497b,5058s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 72i,9n,79p,1497b,4933s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on report.xdv (5 pages, 185504 bytes).
+Output written on report.xdv (5 pages, 192628 bytes).
