@@ -144,11 +144,17 @@
   onMount(() => {
     recompute();
     const onChange = () => recompute();
+    const handleKeydown = (e) => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+    };
     window.addEventListener('resize', onChange);
     window.addEventListener('scroll', onChange, true);
+    window.addEventListener('keydown', handleKeydown);
     return () => {
       window.removeEventListener('resize', onChange);
       window.removeEventListener('scroll', onChange, true);
+      window.removeEventListener('keydown', handleKeydown);
     };
   });
 

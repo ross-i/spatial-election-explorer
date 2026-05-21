@@ -17,7 +17,6 @@ The Python compute layer should be replaced with higher-performance code written
 which would significantly reduce run times for heavy loads.
 
 \item
-  As the number of voters and candidates grows large, the visual representation must adapt.
   Rather than plotting all points, the application could, like \cite{elkind},
   compute a fine 2D histogram, encoding frequency as color intensity.
   Methods for choosing representative samples from the dataset,
@@ -30,13 +29,10 @@ which would significantly reduce run times for heavy loads.
 
 \end{enumerate}
 
-\textbf{Representing Uncertainty in Survey Data.}
-For simplicity, the current implementation of the survey data
-plots all survey respondents. It might make more sense to sample
-from the distribution, taking into account (and perhaps visually representing)
-the uncertainty inherent in the survey data.
-
-\textbf{More Survey Data.}
-As proof of concept, we have included a single source of survey data.
-The application would benefit from more options and more data sources.
-
+\textbf{Improvements to the Survey Data Tab.}
+Users would benefit from having more pre-loaded survey data to explore, and policy makers would enjoy the option to upload your own local survey data. 
+The current implementation of the survey data
+plots all survey respondents, however, we could allow for sampling
+from the survey and visually represent uncertainty in the survey data. 
+Additionally, providing completed survey profiles of real candidates
+using campaign materials would allow for analysis of real election outcomes.

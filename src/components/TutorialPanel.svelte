@@ -38,6 +38,15 @@
       store.activeTutorialStep = 0;
     }
   }
+
+  $effect(() => {
+    function handleKeydown(e) {
+      if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+    }
+    window.addEventListener('keydown', handleKeydown);
+    return () => window.removeEventListener('keydown', handleKeydown);
+  });
 </script>
 
 <div class="tutorial-panel">

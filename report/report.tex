@@ -1,14 +1,10 @@
 \documentclass[twocolumn]{article}
+\usepackage[T1]{fontenc}
 
-\usepackage{csquotes}
-\MakeOuterQuote{"}
 
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage{algorithm}
-\usepackage{algorithmicx}
-\usepackage[noend]{algpseudocode}
 \usepackage{amsthm}
 \usepackage[
     top=0.75in,
@@ -38,42 +34,16 @@
 
 \setlist[itemize,enumerate]{topsep=0.4em, itemsep=0.2em}
 
-\title{\LARGE \textbf{Spatial Election Explorer (SEE)}}
-\author{
-    M. August Rossi,
-    Michael Xiao,
-    Emma Ross,
-    Shu Luan \\
-    {\small University of Chicago}
-}
 
 \begin{document}
 
-\maketitle
-
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=0.95\textwidth]{see-figure-overview.png}
-  \caption{The Spatial Election Explorer (SEE) synthetic data interface.
-  Voters (blue) and candidates (orange) are embedded in a 2D issue space
-  (left); the interface lets the user place points manually, sample
-  from synthetic distributions, load survey-grounded data, manage stacked data layers, and run an election under a chosen voting rule.
-  \textbf{(A)} Abstract 2D election space; (unitless, $[0,1]$).
-  \textbf{(B)} Voter (blue dot). 
-  \textbf{(C)} Candidate (orange star). Winners are rendered at full opacity; eliminated candidates are dimmed in place.
-  \textbf{(D)} Gaussian sampling distribution, drawn as concentric
-  $1\sigma$/$2\sigma$/$3\sigma$ contours.
-  \textbf{(E)} Top bar: add voters or candidates by hand, launch the tutorial, import or export the current configuration.
-  \textbf{(F)} Tabs switch between synthetic
-  (\S\ref{sub:Input}) and survey data exploration (\S\ref{sub:Survey Data}).
-  \textbf{(G)} Synthetic distribution configuration, and click ``add data'' to drop the sampled points
-  onto the plot (\S\ref{sub:Input}).
-  \textbf{(H)} Each manual point or sampled distribution is a stackable,
-  editable layer (\S\ref{sub:Plot Management}).
-  \textbf{(I)} Choose voting rule (Plurality, Borda, IRV, Bloc Plurality,
-  STV, SNTV) and number of winners, then run the election.}
-  \label{fig:overview}
-\end{figure*}
+\twocolumn[{%
+\centering
+{\fontsize{20}{24}\selectfont \textbf{Spatial Election Explorer (SEE)}}\\[0.15em]
+M. August Rossi, Michael Xiao, Emma Ross, Shu Luan\\[-0.1em]
+{\footnotesize University of Chicago}\\[-0.1em]
+{\footnotesize May 21, 2026}\\[0.6em]
+}]
 
 \input{0-abstract.tex}
 
@@ -87,18 +57,41 @@
 
 \begin{figure*}[t]
   \centering
+  \includegraphics[width=0.95\textwidth]{see-figure-overview.png}
+  \caption{The Spatial Election Explorer (SEE) synthetic data interface.
+  Voters (blue points) and candidates (orange stars) are embedded in an abstract 2D election space (unitless, $[0,1]$); the interface lets the user place points manually, sample
+  from synthetic distributions, load survey-grounded data, manage stacked data layers, and run an election under a chosen voting rule (\S\ref{sub:Input})(\S\ref{sec:Preliminaries}).
+  \textbf{(A)} Top bar: add voters or candidates by hand, launch the tutorial, import or export the current configuration.
+  \textbf{(B)} Winners are rendered at full opacity; eliminated candidates are dimmed in place.
+  \textbf{(C)} Gaussian sampling distribution, drawn as concentric
+  $1\sigma$/$2\sigma$/$3\sigma$ contours.
+  \textbf{(D)} Tabs switch between synthetic
+  (\S\ref{sub:Input}) and survey data exploration (\S\ref{sub:Survey Data}).
+  \textbf{(E)} Synthetic distribution configuration. (\S\ref{sub:Input}).
+  \textbf{(F)} Each manual point or sampled distribution is a stackable,
+  editable layer. \textit{Pencil icon}: edit distribution settings, click update to resample points. 
+  \textit{Trash icon}: delete these point(s). \textit{Eye icon}: hide this layer from the plot and election run.
+  \textbf{(G)} Choose voting rule (\S\ref{sec:Preliminaries}) and number of winners, then run the election.}
+  \label{fig:overview}
+\end{figure*}
+
+\begin{figure*}[t]
+  \centering
   \includegraphics[width=0.95\textwidth]{see-figure-survey.png}
   \caption{The survey data interface. Voters are loaded from a real political opinion
   poll (here, the Fall 2014 Statewide IL Poll, 1006 respondents) and
   projected onto two user-chosen ideology axes --- in this example, Role of
   Government $\times$ Social Issues. Each axis is a weighted aggregate of
-  several survey questions, re-rankable by the user. Candidates can be
-  added either by randomized survey response or by answering the same
-  questions interactively.
-  \textbf{(A)} Axis selection and issue ranking panel. Defines the issue
-  space we are investigating in.
-  \textbf{(B)} +Random candidate creates a candidate point with a random profile.
-  \textbf{(C)} +Profile candidate creates a candidate point with a manually specified profile.}
+  several survey questions, re-rankable by the user. 
+  \textbf{(A)} Axis selection and survey question ranking panel.
+  \textbf{(B)} +Random candidate creates a candidate point by randomly selecting answers to all survey questions.
+  \textbf{(C)} Each candidate point is a stackable layer, editing is limited to candidates that map to the survey questions.
+   \textit{Pencil icon}: edit survey question responses, opens the same window as shown in (D).
+  \textit{Trash icon}: delete the candidate \textit{Eye icon}: hide this candidate from the plot and election run.
+  \textbf{(D)} This window opens upon clicking the +Profile candidate button, allowing users to manually specify a 
+  candidate's responses to the survey questions to fit an ideology profile of their choice.
+  \textbf{(E)} Annotations along the axis signal to users the general ideological direction of the axis.
+  }
   \label{fig:survey}
 \end{figure*}
 

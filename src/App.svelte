@@ -1152,12 +1152,7 @@
   :global(*, *::before, *::after) { box-sizing: border-box; margin: 0; padding: 0; }
   :global(body) { font-family: sans-serif; background: #F5F0E8; overflow: hidden; }
   :global(.walkthrough-highlight) {
-    outline: 3px solid #C96442 !important;
-    outline-offset: 2px;
-    box-shadow:
-      inset 0 0 0 3px #C96442,
-      inset 0 0 0 9px rgba(201,100,66,0.14),
-      0 0 0 6px rgba(201,100,66,0.25);
+    box-shadow: 0 0 0 6px rgba(201,100,66,0.25);
     position: relative;
     z-index: 1000;
     transition: outline-color 0.15s, box-shadow 0.15s;
