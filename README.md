@@ -2,6 +2,10 @@
 
 An interactive tool for simulating ranked-choice elections on the Euclidean plane.
 
+## Deployment
+
+The interactive tool is deployed at https://spatial-election-explorer.netlify.app/.
+
 ## Stack
 - Front-end: Svelte + D3 (node.JS)
 - Server: Vite
