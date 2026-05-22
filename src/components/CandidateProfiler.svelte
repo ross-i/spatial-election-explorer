@@ -12,16 +12,16 @@
     idx.questions.map(q => ({ ...q, indexLabel: idx.label }))
   );
 
-  const isEdit = initialAnswers != null;
+  let isEdit = $derived(initialAnswers != null);
 
   let currentIdx = $state(0);
-  let answers = $state(initialAnswers ? { ...initialAnswers } : {});
+  let answers = $state({});
   let namingStep = $state(false);
-  let candidateName = $state(initialName ?? '');
+  let candidateName = $state('');
   // Keyboard-highlighted option index when question is unanswered (not yet committed)
   let hoveredOptionIdx = $state(null);
   let nameInputEl = $state(null);
-  let selectedColor = $state(displayColor ?? CANDIDATE_LAYER_COLOR);
+  let selectedColor = $state(CANDIDATE_LAYER_COLOR);
 
   const total = ALL_QUESTIONS.length;
   let current = $derived(ALL_QUESTIONS[currentIdx]);
@@ -35,6 +35,12 @@
       return { isCurrent, green: isAnswered || (isCurrent && hoveredOptionIdx !== null) };
     })
   );
+
+  $effect(() => {
+    answers = initialAnswers ? { ...initialAnswers } : {};
+    candidateName = initialName ?? '';
+    selectedColor = displayColor ?? CANDIDATE_LAYER_COLOR;
+  });
 
   $effect(() => {
     if (namingStep && nameInputEl) {
