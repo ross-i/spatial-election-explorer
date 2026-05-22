@@ -1,8 +1,7 @@
-import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.mjs";
-
 let pyodide;
 
 async function init() {
+  const { loadPyodide } = await import(/* @vite-ignore */ "https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.mjs");
   pyodide = await loadPyodide();
   const modules = import.meta.glob("./py/**/*.py", { query: "?raw", eager: true });
 
