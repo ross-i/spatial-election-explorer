@@ -401,6 +401,8 @@
     tabSnapshots[store.activeTab] = captureTabState();
     store.activeTab = tab;
     applyTabState(tabSnapshots[tab] ?? blankTabState());
+    store.addMode = null;
+    store.selectingCenter = false;
   }
 
   function exportData() {
@@ -442,6 +444,10 @@
       return;
     }
     if (store.addMode) {
+      if (!canUseAddMode(store.addMode)) {
+        store.addMode = null;
+        return;
+      }
       const type = store.addMode;
 
       const kind = type === 'candidate' && store.activeTab === 'survey' ? { kind: 'survey_candidate' } : null;
@@ -461,7 +467,20 @@
     }
   }
 
+  function canUseAddMode(mode) {
+    if (mode === 'voter' && store.activeTab === 'survey') return false;
+    if (mode === 'candidate' && store.activeTab === 'survey') {
+      return store.surveyXAxis && store.surveyYAxis && store.surveyXAxis !== store.surveyYAxis;
+    }
+    return mode === 'voter' || mode === 'candidate';
+  }
+
   function toggleAddMode(mode) {
+    if (!canUseAddMode(mode)) {
+      store.addMode = null;
+      store.selectingCenter = false;
+      return;
+    }
     store.addMode = store.addMode === mode ? null : mode;
     store.selectingCenter = false;
   }
