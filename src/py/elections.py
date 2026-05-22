@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.spatial.distance import cdist
 from methods import plurality, bloc_plurality, borda, IRV, STV
 
 METHODS = {
@@ -124,7 +123,7 @@ def _squash_layers(layers):
     voter_positions = np.array(voter_positions)
     candidate_positions = np.array(candidate_positions)
     weights = np.array(weights)
-    distances = cdist(voter_positions, candidate_positions)
-    profile = np.argsort(distances, axis=1)
+    deltas = voter_positions[:, None, :] - candidate_positions[None, :, :]
+    squared_distances = np.sum(deltas * deltas, axis=2)
+    profile = np.argsort(squared_distances, axis=1)
     return candidate_ids, profile, weights
-

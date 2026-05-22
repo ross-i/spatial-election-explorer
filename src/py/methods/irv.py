@@ -34,8 +34,6 @@ def IRV(profile: np.ndarray, weights: np.ndarray, num_winners: int) -> tuple[np.
     while remaining.sum() > num_winners:
         votes = profile[np.arange(n), np.argmax(remaining[profile], axis=1)]
         scores = np.bincount(votes, weights, minlength=m)
-        print(f'{scores=}')
         to_elim = np.argmin(np.where(scores > 0, scores, np.inf))
         remaining[to_elim] = False
     return remaining, scores
-

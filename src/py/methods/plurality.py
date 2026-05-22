@@ -82,7 +82,5 @@ def _generic_plurality(profile: np.ndarray,
     if k > 1:
         weights = np.repeat(weights, k)
     scores = np.bincount(points, weights, profile.shape[1])
-    print(scores)
     winners = _make_winners(scores, num_winners)
     return winners, scores
-

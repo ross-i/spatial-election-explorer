@@ -7,7 +7,6 @@ async function init() {
   const modules = import.meta.glob("./py/**/*.py", { query: "?raw", eager: true });
 
   await pyodide.loadPackage("numpy");
-  await pyodide.loadPackage("scipy");
   for (const [path, module] of Object.entries(modules)) {
     const relPath = path.replace(/^\.\/py\//, "");  // e.g. "methods/__init__.py"
     const fullPath = `/home/pyodide/${relPath}`;
@@ -34,4 +33,3 @@ self.onmessage = async (e) => {
 };
 
 init();
-

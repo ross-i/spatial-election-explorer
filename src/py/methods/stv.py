@@ -53,7 +53,6 @@ def STV(profile: np.ndarray, weights: np.ndarray, num_winners: int) -> tuple[np.
         top_choice_col = np.argmax(candidate_is_active, axis=1)  # index into each voter's ballot of their top active pick
         votes = profile[np.arange(n), top_choice_col]  # map back to candidates
         scores = np.bincount(votes, weights, minlength=m)
-        print(f'{scores=}')
         top_cand = np.argmax(scores)
         if scores[top_cand] > threshold:
             winners[top_cand] = True
@@ -62,4 +61,3 @@ def STV(profile: np.ndarray, weights: np.ndarray, num_winners: int) -> tuple[np.
             top_cand = np.argmin(np.where(scores > 0, scores, np.inf))
         remaining[top_cand] = False
     return winners, None
-
