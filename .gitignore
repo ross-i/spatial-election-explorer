@@ -1,3 +1,6 @@
+# dev files
+FIX.md
+
 .local
 .env
 
@@ -11,3 +14,19 @@
 # python bytecode
 *.pyc
 __pycache__
+
+.claude/
+*.texbuild/
+
+# auxiliary report files
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.xdv

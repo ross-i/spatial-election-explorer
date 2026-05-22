@@ -1,0 +1,72 @@
+\begingroup
+
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0em}
+
+\textbf{Spatial Model of Elections.}
+Each voter and candidate has a position in $\mathbb{R}^2$.
+The pairwise Euclidean distances are computed between
+all voters and all candidates.
+A voter's ballot ranks candidates in order of increasing distance.
+A collection of such rankings is called a \textit{preference profile}.
+
+\textbf{Voting Rule.}
+In this context, a \textit{voting rule} is a function that takes as input a preference profile
+and returns a set of one or more winning alternatives.
+
+\textbf{Single-Winner Voting Rules.}
+
+\begin{itemize}[topsep=0em]
+\item[]
+\textbf{Plurality.}
+The candidate with the most first-place votes wins.
+
+\textbf{Borda.}
+Each candidate's score is
+the total count of candidates ranked below them, summed across all ballots.
+The candidate with the highest score wins.
+
+\textbf{Instant Runoff Voting (IRV).}
+First-place votes are tallied.
+The candidate with the fewest votes is eliminated;
+their supporters' votes transfer to their next favorite remaining candidate.
+Repeat until only one candidate remains---they are the winner.
+
+\end{itemize}
+
+\textbf{Multi-Winner Voting Rules.} Let $k$ be the number of winners, i.e.,
+these rules elect a committee of size $k$.
+
+\begin{itemize}[topsep=0em]
+  \item[]
+  \textbf{Single Non-Transferable Vote (SNTV).}
+  First-place votes are tallied.
+  The $k$ highest-scoring candidates are elected.
+
+  \textbf{Bloc Plurality.}
+  Each candidate's score is the number of ballots in which
+  they appear in the top $k$ positions.
+  The $k$ highest-scoring candidates are elected.
+
+  \textbf{$k$-Borda.}
+  The $k$ candidates with the highest Borda scores are elected.
+
+  \textbf{Single Transferable Vote (STV).}
+  Let $n$ be the number of voters.
+  First-place votes are tallied to give initial candidate scores.
+  Iterate the following process:
+  if any candidate's score $s$ is greater than
+  $ q = \lfloor \frac{n}{k+1} \rfloor $, elect them,
+  reweight each supporting voter's ballot by a factor of $\frac{s-q}{s}$,
+  and transfer their support to their next-favorite remaining candidate.
+  If no candidate is above the threshold, eliminate the candidate
+  with the lowest score and redistribute their support.
+
+  Only one candidate can be elected at a time:
+  if multiple candidates are simultaneously above threshold,
+  the candidate with the greater score is elected
+  and their support is redistributed before any other candidates are elected.
+
+\end{itemize}
+
+\endgroup

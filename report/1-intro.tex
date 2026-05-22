@@ -1,0 +1,84 @@
+
+Imagine a scenario in which the members of a group have each ranked a set of alternatives
+from most preferred to least preferred.
+How should this set of rankings be consolidated to a single ranking
+or to a set of winning alternatives that fairly represents the entire group's preferences?
+The most familiar setting for this problem is an election,
+where voters rank candidates to choose their representatives,
+but the problem setup applies much more broadly:
+consider
+a set of friends deciding what movie to watch or restaurant to visit;
+a committee choosing what candidates to shortlist or hire; or
+a panel of judges who have ranked competitors in ice skating or ballroom dance.
+
+There are many algorithms (called \textit{voting rules}) for aggregating these group preferences:
+how should the group choose which to use?
+Deliberation about this decision might involve invoking the details of the algorithms,
+or making appeals to axiomatic properties that such algorithms may or may not satisfy.
+% Some group member might say that Single Transferable Vote (STV) is "more proportional"
+% than Bloc Plurality for electing committees;
+% that Instant-Runoff Voting (IRV), unlike Plurality, "avoids the spoiler effect";
+% or that Plurality exhibits a "center squeeze" effect.
+Non-experts may find such arguments to be overly complex, too abstract, or simply confusing.
+Methods to visualize the behavior of voting rules can bridge this communication gap
+and help voters develop intuition about the differences between algorithms.
+
+The core objective of our project is to employ an established election visualization technique,
+the two-dimensional spatial model, as the basis of an interactive election simulator.
+Allowing users to build, experiment, and iterate upon their own simulations
+builds intuition in ways that a set of static plots cannot.
+Combining visualization with iterative experimentation
+allows users to both \textit{see} the properties of the various algorithms
+and to learn the conditions under which these properties emerge.
+
+\textbf{Our Methodology.}
+To facilitate visualization, we adopt a two-dimensional spatial model of voters' preferences.
+Voters and candidates are jointly embedded in the Euclidean plane,
+and voters rank candidates in order of increasing distance.
+Voters therefore prefer candidates that are closer, or "more similar", to themselves.
+This model is common in both theoretical \cite{spatial}
+and empirical \cite{guide} research in computational social science.
+Further, it has a natural interpretation:
+the position of voters and candidates might represent their
+positions on two political issues or on two ideological axes.
+
+In the Spatial Election Explorer (SEE),
+voters and candidates can be placed on the plane by hand,
+by sampling from the available distributions,
+or by mapping survey data to positions on ideological axes.
+Their positions determine a unique collection of rankings,
+which can be used as input to any of various voting rules.
+The winners are displayed, providing the user a visual description
+of how the distribution of winners differs according to the choice of voting rule.
+
+\textbf{Audience.}
+The intended audience for our application is threefold:
+\begin{itemize}[itemsep=0.2em]
+\item[1.] Computational social choice researchers can experiment with various voting rules,
+testing and refining the intuition they already have for those methods.
+Visualization may also suggest patterns of behavior in these voting rules that can
+be axiomatized and studied formally.
+%
+\item[2.] Students studying social choice theory can use the tool to develop intuition
+for the behavior of voting rules that supplements their learning in the
+classroom.
+%
+\item[3.] Policymakers and policy advocates considering ranked-choice voting
+   can use SEE to compare voting rules and build intuition about how outcomes vary.
+\end{itemize}
+
+\textbf{Related Work.}
+Our work is primarily inspired by Elkind et al. \cite{elkind},
+whose experiments generated plots capturing the distribution of winning candidates
+under various multi-winner voting rules
+and across varying underlying distributions of voters and candidates.
+SEE extends this approach by making it interactive and incorporating real-world survey data.
+
+Another visualization approach is presented by
+Szufa et al. \cite{dap}, who created visual "maps" of preference profiles
+by computing swap distances between ballots and applying the
+multidimensional scaling (MDS) algorithm.
+Extending this method to an interactive application would require
+some external method for generating election data;
+the spatial model, on the other hand, consolidates the generation and visualization steps
+because the position of points \textit{determines} the voters' rankings.

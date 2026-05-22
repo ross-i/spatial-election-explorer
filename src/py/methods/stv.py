@@ -39,7 +39,7 @@ def STV(profile: np.ndarray, weights: np.ndarray, num_winners: int) -> tuple[np.
         No meaningful score for STV in our context; always returns None.
     """
 
-    weights = weights.copy()
+    weights = weights.copy().astype(float)
     n, m = profile.shape
     winners = np.zeros(m, dtype=bool)
     remaining = np.ones(m, dtype=bool)

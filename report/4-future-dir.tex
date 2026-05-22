@@ -1,0 +1,38 @@
+
+There are a number of natural ways to improve the application or expand its scope.
+
+\textbf{More Voting Rules.}
+Elkind et al. \cite{elkind} also examine
+Chamberlin-Courant (CC) and Monroe,
+multi-winner voting rules noted for their proportionality properties.
+These or any of the many methods proposed in the rich social choice
+literature could be worth inclusion.
+
+
+\textbf{Scaling to more voters and candidates.}
+To handle more voters and candidates, two sets of changes are necessary:
+\begin{enumerate}
+  \item
+The Python compute layer should be replaced with higher-performance
+code written in Rust or C++ to significantly reduce run times for heavy loads.
+
+\item
+  Rather than plotting all points, the application could, like \cite{elkind},
+  compute a fine 2D histogram, encoding frequency as color intensity.
+  Methods for choosing representative samples from the dataset,
+  or for estimating and visualizing density, should also be explored.
+
+  Additionally, we could replace D3
+  with a higher-performance visualization library
+  that supports the WebGL API,
+  such as Apache ECharts, deck.gl, or SciChart.js.
+
+\end{enumerate}
+
+\textbf{Improvements to the Survey Data Tab.}
+Users would benefit from having more pre-loaded survey data to explore, and policymakers would enjoy the option to upload their own local survey data. 
+The current implementation of the survey data
+plots all survey respondents, however, we could allow for sampling
+from the survey and visually represent uncertainty in the survey data. 
+Additionally, providing completed survey profiles of real candidates
+using campaign materials would allow for analysis of real election outcomes.

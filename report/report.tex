@@ -1,0 +1,109 @@
+\documentclass[twocolumn]{article}
+\usepackage[T1]{fontenc}
+
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage[
+    top=0.75in,
+    bottom=0.75in,
+    left=0.75in,
+    right=0.75in
+]{geometry}
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{mathrsfs}
+\usepackage{xspace}
+\usepackage[f]{esvect}
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\hypersetup{
+    colorlinks=true,
+    citecolor=.,
+    linkcolor=.,
+    urlcolor=.,
+}
+
+\usepackage[backend=biber, bibstyle=ieee, url=false,
+            giveninits=true, doi=false, maxbibnames=15]{biblatex}
+\addbibresource{references.bib}
+
+\raggedbottom
+\setlist[itemize,enumerate]{topsep=0.4em, itemsep=0.2em}
+
+
+\begin{document}
+
+\twocolumn[{%
+\centering
+{\fontsize{20}{24}\selectfont \textbf{Spatial Election Explorer (SEE)}}\\[0.15em]
+M. August Rossi, Michael Xiao, Emma Ross, Shu Luan\\[-0.1em]
+{\footnotesize University of Chicago}\\[-0.1em]
+{\footnotesize May 21, 2026}\\[0.6em]
+}]
+
+\input{0-abstract.tex}
+
+\section{Introduction}%
+\label{sec:Introduction}
+\input{1-intro.tex}
+
+\section{Preliminaries}%
+\label{sec:Preliminaries}
+\input{2-prelim.tex}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.95\textwidth]{see-figure-overview.png}
+  \caption{The Spatial Election Explorer (SEE) synthetic data interface.
+  Voters (blue points) and candidates (orange stars) are embedded in an abstract 2D election space (unitless, $[0,1]$); the interface lets the user place points manually, sample
+  from synthetic distributions, load survey-grounded data, manage stacked data layers, and run an election under a chosen voting rule (\S\ref{sub:Input})(\S\ref{sec:Preliminaries}).
+  \textbf{(A)} Top bar: add voters or candidates by hand, launch the tutorial, import or export the current configuration.
+  \textbf{(B)} Winners are rendered at full opacity; eliminated candidates are dimmed in place.
+  \textbf{(C)} Gaussian sampling distribution, drawn as concentric
+  $1\sigma$/$2\sigma$/$3\sigma$ contours.
+  \textbf{(D)} Tabs switch between synthetic
+  (\S\ref{sub:Input}) and survey data exploration (\S\ref{sub:Survey Data}).
+  \textbf{(E)} Synthetic distribution configuration. (\S\ref{sub:Input}).
+  \textbf{(F)} Each manual point or sampled distribution is a stackable,
+  editable layer. \textit{Pencil icon}: edit distribution settings, click update to resample points. 
+  \textit{Trash icon}: delete these point(s). \textit{Eye icon}: hide this layer from the plot and election run.
+  \textbf{(G)} Choose voting rule (\S\ref{sec:Preliminaries}) and number of winners, then run the election.}
+  \label{fig:overview}
+\end{figure*}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.95\textwidth]{see-figure-survey.png}
+  \caption{The survey data interface. Voters are loaded from a real political opinion
+  poll (here, the Fall 2014 Statewide IL Poll, 1006 respondents) and
+  projected onto two user-chosen ideology axes --- in this example, Role of
+  Government $\times$ Social Issues. Each axis is a weighted aggregate of
+  several survey questions, re-rankable by the user. 
+  \textbf{(A)} Axis selection and survey question ranking panel.
+  \textbf{(B)} +Random candidate creates a candidate point by randomly selecting answers to all survey questions.
+  \textbf{(C)} Each candidate point is a stackable layer, editing is limited to candidates that map to the survey questions.
+   \textit{Pencil icon}: edit survey question responses, opens the candidate profile window.
+  \textit{Trash icon}: delete the candidate \textit{Eye icon}: hide this candidate from the plot and election run.
+  \textbf{(D)} Candidate profile window opens upon clicking the +Profile candidate button, allowing users to manually specify a 
+  candidate's responses to the survey questions to fit an ideology profile of their choice.
+  \textbf{(E)} Annotations along the axis signal to users the general ideological direction of the axis.
+  }
+  \label{fig:survey}
+\end{figure*}
+
+\section{Application Design}%
+\label{sec:Design and Implementation}
+\input{3-design.tex}
+
+\section{Future Directions}%
+\label{sec:Future Directions}
+\input{4-future-dir.tex}
+
+\printbibliography
+
+\end{document}
